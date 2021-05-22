@@ -15,25 +15,33 @@ local random = math.random
 local objectGroup, dropTimer
 
 function scene:create( event )
-	physics.setDrawMode( "normal" )
+	if not _G.isHTML5 then
+		physics.setDrawMode( "normal" )
+	end
 
 	local sceneGroup = self.view
 	objectGroup = display.newGroup()
 	sceneGroup:insert( objectGroup )
 
-	local title = display.newText( sceneGroup, event.params[1], display.contentCenterX, composer.header.y, composer.font, composer.header.size )
-	title:setFillColor( composer.colourA[1], composer.colourA[2], composer.colourA[3] )
-
-	local button = btn.new( title )
+	local button = btn.new()
 	sceneGroup:insert( button )
 
-	local description = display.newText( sceneGroup, "In order to morph an object, you must first prepare it by giving it a body. This function works identical to its standard physics library counterpart in Corona.", display.contentCenterX, title.y + title.height*0.5 + 8, 600, 400, composer.font, composer.body.size )
-	description.anchorY = 0
+	local title = display.newText( sceneGroup, event.params[1], button.x - button.width*0.5, button.y + 80, "demoScene/font/Roboto-Regular.ttf", 40 )
+	title:setFillColor( 252/255, 186/255, 4/255 )
+	title.anchorX = 0
+
+	local description = display.newText( sceneGroup,
+		"In order to morph an object, you must first give it a physics body using the spyricMorph.addBody() function.\n\n" ..
+		"This function works identical to its standard Solar2D physics library counterpart.\n\n" ..
+		"The only difference is that it adds the morph method to the object.",
+		title.x, title.y + title.height + 12, 440, 0, "demoScene/font/Roboto-Regular.ttf", 24
+	)
+	description.anchorX, description.anchorY = 0, 0
 
 	local starVertices = { 0, -100, 27, -25, 105, -25, 43, 26, 65, 100, 0, 55, -65, 100, -43, 25, -105, -25, -27, -25 }
 	local vertices = { 40, -40, 40, 0, 0, 0 }
 
-	-- Function for randomly spawning and morphing triangles and rectangles that then fall down.
+	-- Spawn rectangles, triangles and crosses at random and morph them to different sizes.
 	local whichFilter = "pass"
 	local function dropObject()
 		local object, objectFilter
@@ -53,7 +61,7 @@ function scene:create( event )
 			object = display.newPolygon( objectGroup, 0, 0,
 				{ -10, -5, -5, -5, -5, -10, 5, -10, 5, -5, 10, -5, 10, 5, 5, 5, 5, 10, -5, 10, -5, 5, -10, 5 }
 			)
-			-- Creating a simple multi-element body.
+			-- Creating a simple cross-shaped multi-element body.
 			spyricMorph.addBody( object,
 				{ shape = { -5, -10, 5, -10, 5, 10, -5, 10 }, filter = objectFilter },
 				{ shape = { -10, -5, 10, -5, 10, 5, -10, 5 }, filter = objectFilter }
@@ -62,13 +70,13 @@ function scene:create( event )
 
 		else
 			object = display.newRect( objectGroup, 0, 0, 20, 20 )
-			-- If no body is defined, then addBody will create a rectangular body it.
+			-- If no shape is defined, then addBody() will create a rectangular body for the object.
 			spyricMorph.addBody( object, { filter = objectFilter } )
 			object:morph( 2+random()*2, 2+random()*2 )
 
 		end
 
-		object.x, object.y = random( 80, 560 ), 480
+		object.x, object.y = random( 460, 900 ), 160
 
 		if whichFilter == "pass" then
 			object:setFillColor( 0, 0.8, 0 )
@@ -80,9 +88,9 @@ function scene:create( event )
 	end
 	dropTimer = timer.performWithDelay( 450, dropObject, 100 )
 
-	local star = display.newPolygon( objectGroup, 0, 760, starVertices )
+	local star = display.newPolygon( objectGroup, display.contentCenterX + 40, 500, starVertices )
 	star:setFillColor( 0.8, 0, 0 )
-	star.rotation = 20
+	star.rotation = -15
 	spyricMorph.addBody( star, "static",
 		{
 			chain = starVertices,
@@ -90,9 +98,9 @@ function scene:create( event )
 			filter = redFilter
 		}
 	)
-	star:morph( -1.8, 0.8 )
+	star:morph( -0.8, 0.4 )
 
-	local platform = display.newRect( objectGroup, display.contentCenterX, display.contentCenterY+240, 600, 40 )
+	local platform = display.newRect( objectGroup, display.contentCenterX + 220, display.contentCenterY+160, 500, 20 )
 	platform:setFillColor( 0, 0.8, 0 )
 	platform.rotation = 15
 	physics.addBody( platform, "static", { bounce=0.5, filter=platformFilter } )
@@ -104,7 +112,9 @@ end
 function scene:hide( event )
 	if ( event.phase == "will" ) then
 		timer.cancel( dropTimer )
-		physics.setDrawMode( "hybrid" )
+		if not _G.isHTML5 then
+			physics.setDrawMode( "hybrid" )
+		end
 		transition.to( objectGroup, { time=600, alpha=0, delay=80, transition=easing.outQuad } )
 	end
 end

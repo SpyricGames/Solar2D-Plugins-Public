@@ -1,24 +1,69 @@
-display.setStatusBar( display.HiddenStatusBar )
+---------------------------------------------------------------------------
+--     _____                  _         ______                           --
+--    / ___/____  __  _______(_)____   / ____/___ _____ ___  ___  _____  --
+--    \__ \/ __ \/ / / / ___/ / ___/  / / __/ __ `/ __ `__ \/ _ \/ ___/  --
+--   ___/ / /_/ / /_/ / /  / / /__   / /_/ / /_/ / / / / / /  __(__  )   --
+--  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
+--      /_/    /____/                                                    --
+--                                                                       --
+--  © 2020-2021 Spyric Games Ltd.             Last Updated: 22 May 2021  --
+---------------------------------------------------------------------------
+--  License: MIT                                                         --
+---------------------------------------------------------------------------
 
-local composer = require( "composer" )
-local demoUI = require( "demoUI.ui" )
-demoUI.create()
+-- Set up the demo scene UI.
+local demoScene = require( "demoScene.ui" ).create( "Spyric Performance", true )
 
--- Load and start the performance bar (located at the top centre of the screen by default).
+-- Require Spyric Performance.
 local performance = require( "spyric.performance" )
-performance:start()
 
-local note = display.newText( "Tap the performance     >\nmeter to hide/reveal it.", 250, 120, composer.font, 20 )
-note:setFillColor( unpack( composer.fontColour ) )
+-- Approach 1:
+-- Start the performance meter & adjust its position later.
+------------------------------------------------------------
+performance.start()
+performance.meter.x = display.contentCenterX
+performance.meter.y = display.minY + 20
 
--- Create a simple infinite loop for adding and removing display objects to demonstrate the plugin.
+
+-- Approach 2:
+-- Visually customise and start the performance meter.
+------------------------------------------------------------
+-- local customStyle = {
+-- 	paddingHorizontal = 10,
+-- 	paddingVertical = 6,
+-- 	bgColor = { 0.5, 0, 0 },
+-- 	fontSize = 20,
+-- 	anchorY = 1,
+-- 	x = display.contentCenterX,
+-- 	y = display.minY + 20,
+-- 	font = "demoScene/font/Roboto-Black.ttf",
+-- }
+-- -- Also, don't make the performance meter visible on start.
+-- performance.start( false, customStyle )
+
+
+------------------------------------------------------------
+
+
+local tooltip = display.newText({
+	text = "▲\nTap the meter to hide/reveal it.",
+	x = performance.meter.x,
+	y = performance.meter.y + 40,
+	font = "demoScene/font/Roboto-Black.ttf",
+	fontSize = 20,
+	align = "center",
+})
+tooltip:setFillColor( 252/255, 186/255, 4/255 )
+
+
+-- Create a simple loop for adding and removing display objects to demonstrate the plugin.
 local loopStart
 local t = {}
 local iterations = 50
 local delay = 50
 
 local function add()
-	t[#t+1] = display.newText( "Hello!", math.random( 120, display.actualContentWidth-120), math.random(200, display.actualContentHeight-140), composer.font, math.random(30,120) )
+	t[#t+1] = display.newText( "Hello!", math.random( 120, display.actualContentWidth-120), math.random(200, display.actualContentHeight-140), "demoScene/font/Roboto-Black.ttf", math.random(30,120) )
 end
 
 local function remove()
@@ -38,10 +83,3 @@ function loopStart()
 end
 
 loopStart()
-
------------------------------------------------------------------------------------------------------------------------
--- Cheating a bit by moving the performance meter manually so that it fits the demoScene UI perfectly, but so that
--- moving it doesn't actually affect the performance meter's default position if someone copies it from here directly.
-performance.text.y = performance.text.y + 80
-performance.bg.y = performance.bg.y + 80
------------------------------------------------------------------------------------------------------------------------

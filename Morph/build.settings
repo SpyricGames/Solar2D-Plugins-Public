@@ -1,8 +1,49 @@
-settings =
+---------------------------------------------------------------------------
+--     _____                  _         ______                           --
+--    / ___/____  __  _______(_)____   / ____/___ _____ ___  ___  _____  --
+--    \__ \/ __ \/ / / / ___/ / ___/  / / __/ __ `/ __ `__ \/ _ \/ ___/  --
+--   ___/ / /_/ / /_/ / /  / / /__   / /_/ / /_/ / / / / / /  __(__  )   --
+--  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
+--      /_/    /____/                                                    --
+--                                                                       --
+--  © 2020-2021 Spyric Games Ltd.             Last Updated: 21 May 2021  --
+---------------------------------------------------------------------------
+--  License: MIT                                                         --
+---------------------------------------------------------------------------
+
+-- Default build settings for all Spyric Games Ltd. plugins:
+
+settings = 
 {
-	orientation =
+	splashScreen = 
+	{
+		enable = false
+	},
+
+	orientation = 
 	{
 		default = "landscapeRight",
-		supported = { "landscapeRight", "landscapeLeft" },
+		supported = { "landscapeRight" },
+	},
+	
+	iphone =
+	{
+		xcassets = "Images.xcassets",
+		plist =
+		{
+			CFBundleIconFiles = {},
+			UIStatusBarHidden = true,
+			UILaunchStoryboardName = "LaunchScreen",
+		},
+	},
+	
+	excludeFiles =
+	{
+		all =		{ "LICENSE", "README.md" },
+		ios =		{ "*AndroidResources*", },
+		android =	{ "*.xcassets*", "*.storyboardc*", },
+    	web =		{ "*.xcassets*", "*.storyboardc*", "*AndroidResources*" },
+		win32 =		{ "*.xcassets*", "*.storyboardc*", "*AndroidResources*" },
+		macos =		{ "*.xcassets*", "*.storyboardc*", "*AndroidResources*" },
 	},
 }

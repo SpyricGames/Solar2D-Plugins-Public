@@ -1,4 +1,17 @@
-local M = {}
+---------------------------------------------------------------------------
+--     _____                  _         ______                           --
+--    / ___/____  __  _______(_)____   / ____/___ _____ ___  ___  _____  --
+--    \__ \/ __ \/ / / / ___/ / ___/  / / __/ __ `/ __ `__ \/ _ \/ ___/  --
+--   ___/ / /_/ / /_/ / /  / / /__   / /_/ / /_/ / / / / / /  __(__  )   --
+--  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
+--      /_/    /____/                                                    --
+--                                                                       --
+--  © 2020-2021 Spyric Games Ltd.             Last Updated: 22 May 2021  --
+---------------------------------------------------------------------------
+--  License: MIT                                                         --
+---------------------------------------------------------------------------
+
+local morph = {}
 
 local physics = physics or require( "physics" )
 
@@ -12,27 +25,28 @@ local sort = table.sort
 local addBody = physics.addBody
 local removeBody = physics.removeBody
 
--- -- Find and return vertices relative to the given vertices' centre.
-local x, y = {}, {} -- Re-use these tables for improved performance.
-local function getRelativeVertices( t )
-	local n, l = 1, #t
+local x, y = {}, {}
 
-	for i = 1, l, 2 do
+-- Translate given vertices into absolute coordinates.
+local function getAbsoluteVertices( t )
+	local n, len = 0, #t
+
+	for i = 1, len, 2 do
+		n = n+1
 		x[n] = t[i]
 		y[n] = t[i+1]
-		n = n+1
 	end
 
 	local xCentre = ( max( unpack(x) ) + min( unpack(x) ) )*0.5
 	local yCentre = ( max( unpack(y) ) + min( unpack(y) ) )*0.5
 
-	-- Clean up and keep the tables for faster future usage.
-	for i = 1, n-1 do
+	-- Reduce, reuse and recycle.
+	for i = 1, n do
 		x[i], y[i] = nil, nil
 	end
 
 	local v = {}
-	for i = 1, l, 2 do
+	for i = 1, len, 2 do
 		v[i] = t[i] - xCentre
 		v[i+1] = t[i+1] - yCentre
 	end
@@ -40,55 +54,60 @@ local function getRelativeVertices( t )
 	return v
 end
 
--- adds the :morph() function to the display object
-function M.addBody( ... )
+-- Creates a standard Solar2D physics body for a given display object while also adding morph method to it.
+function morph.addBody( ... )
 	local t = { ... }
 
 	if type( t[1] ) ~= "table" then
-		print( "WARNING: bad argument #1 to 'spyricMorph.addBody' (table expected, got " .. type( t[1] ) .. ")." )
+		print( "ERROR: bad argument #1 to 'spyricMorph.addBody' (table expected, got " .. type( object ) .. ")." )
 		return
 	end
 
-	-- bodyType and all other parameters passed to addBody() are stored for later use with morphing.
-	local offset, n = 0, 1
-	t[1].morphData = {}
+	-- Create a local reference to the display object and add morph tables.
+	local object = t[1]
+	object.morphData = {}
+	object.morphData.params = {}
+
+	-- Determine the body type.
+	local offset = 0
 	if type( t[2] ) == "string" then
-		t[1].morphData.bodyType = t[2]
+		object.morphData.bodyType = (t[2] == "static" or t[2] == "kinematic") and t[2] or "dynamic"
 		offset = 1
 	else
-		t[1].morphData.bodyType = "dynamic"
+		object.morphData.bodyType = "dynamic"
 	end
-	t[1].morphData.params = {}
-	for i = 2+offset, #t do
-		t[1].morphData.params[n] = {}
-		for j, k in pairs( t[i] ) do
-			if type( k ) == "table" then
-				t[1].morphData.params[n][j] = {}
-				if j == "outline" then
+	
+	-- Add all inputted bodies and their entries to the morph tables.
+	local n = 1
+	for bodyCount = 2+offset, #t do
+		object.morphData.params[n] = {}
+		for key, value in pairs( t[bodyCount] ) do
+			if type( value ) == "table" then
+				object.morphData.params[n][key] = {}
+				if key == "outline" then
 					print( "WARNING: Outline bodies are not supported by spyricMorph." )
-				elseif j == "radius" then
+				elseif key == "radius" then
 					print( "WARNING: Circular bodies are not supported by spyricMorph." )
 				else
-					for l, m in pairs( k ) do
-						t[1].morphData.params[n][j][l] = m
+					for i, v in pairs( value ) do
+						object.morphData.params[n][key][i] = v
 					end
 				end
 			else
-				t[1].morphData.params[n][j] = k
+				object.morphData.params[n][key] = value
 			end
 		end
 		n = n+1
 	end
 
-	-- spyricMorph requires for all shapes and chains to be oriented around the object's centre, so in the case that only one
-	-- params table that contains shape or chain table is passed to the function, the vertices need to be oriented correctly.
-	if #t[1].morphData.params == 1 and (t[1].morphData.params[1].shape or t[1].morphData.params[1].chain) then
-		local v = getRelativeVertices( t[1].morphData.params[1].shape or t[1].morphData.params[1].chain )
+	-- Morphing requires the bodies' vertices to use absolute coordinates (i.e. the body's centre is {0,0} position).
+	if #object.morphData.params == 1 and (object.morphData.params[1].shape or object.morphData.params[1].chain) then
+		local v = getAbsoluteVertices( object.morphData.params[1].shape or object.morphData.params[1].chain )
 		local target
-		if t[1].morphData.params[1].shape then
-			target = t[1].morphData.params[1].shape
+		if object.morphData.params[1].shape then
+			target = object.morphData.params[1].shape
 		else
-			target = t[1].morphData.params[1].chain
+			target = object.morphData.params[1].chain
 		end
 
 		for i = 1, #v do
@@ -96,45 +115,47 @@ function M.addBody( ... )
 		end
 	end
 
-	-- A method for scaling (morphing) both the display object and its physics body.
-	t[1].morph = function( self, xScale, yScale )
-		local xScale, xOffset = xScale or 1, 0
-		local yScale, yOffset = yScale or 1, 0
+	-- Scale the object and recreate a matching physics body for it.
+	function object:morph( xScale, yScale )
+		local xScale = type(xScale) == "number" and xScale or 1
+		local yScale = type(yScale) == "number" and yScale or xScale
 		self.xScale, self.yScale = xScale, yScale
 
-		-- If an object's anchor isn't centered, then its shapes need to be offset accordingly.
+		-- If an object's anchor isn't centered, then adjust the offsets.
+		local xOffset = 0
 		if self.anchorX ~= 0.5 then
 			xOffset = ( self.anchorX - 0.5 ) * ( 1 - xScale ) * self.width
 		end
+		local yOffset = 0
 		if self.anchorY ~= 0.5 then
 			yOffset = ( self.anchorY - 0.5 ) * ( 1 - yScale ) * self.height
 		end
 
-		-- Use the stored data to form the parameters necessary to morphing the display object.
+		-- Use the stored morph table data to calculate the new vertices for each body.
 		local params, gotShape = {}, false
-		for i = 1, #self.morphData.params do
-			params[i] = {}
-			for j, k in pairs( self.morphData.params[i] ) do
-				if type( k ) == "table" then
-					params[i][j] = {}
-					for l, m in pairs( k ) do
-						params[i][j][l] = m
+		for bodyCount = 1, #self.morphData.params do
+			params[bodyCount] = {}
+			for key, value in pairs( self.morphData.params[bodyCount] ) do
+				if type( value ) == "table" then
+					params[bodyCount][key] = {}
+					for i, v in pairs( value ) do
+						params[bodyCount][key][i] = v
 					end
-					if j == "shape" or j == "chain" then
+					if key == "shape" or key == "chain" then
 						gotShape = true
-						for l = 1, #params[i][j], 2 do
-							params[i][j][l] = params[i][j][l] * xScale + xOffset
-							params[i][j][l+1] = params[i][j][l+1] * yScale + yOffset
+						for l = 1, #params[bodyCount][key], 2 do
+							params[bodyCount][key][l] = params[bodyCount][key][l] * xScale + xOffset
+							params[bodyCount][key][l+1] = params[bodyCount][key][l+1] * yScale + yOffset
 						end
-					elseif j == "box" then
+					elseif key == "box" then
 						gotShape = true
-						params[i][j].halfWidth = params[i][j].halfWidth * xScale * 0.5
-						params[i][j].halfHeight = params[i][j].halfHeight * yScale * 0.5
-						params[i][j].x = params[i][j].x * xScale
-						params[i][j].y = params[i][j].y * yScale
+						params[bodyCount][key].halfWidth = params[bodyCount][key].halfWidth * xScale * 0.5
+						params[bodyCount][key].halfHeight = params[bodyCount][key].halfHeight * yScale * 0.5
+						params[bodyCount][key].x = params[bodyCount][key].x * xScale
+						params[bodyCount][key].y = params[bodyCount][key].y * yScale
 					end
 				else
-					params[i][j] = k
+					params[bodyCount][key] = value
 				end
 			end
 		end
@@ -145,7 +166,8 @@ function M.addBody( ... )
 
 		if gotShape then
 			addBody( self, self.morphData.bodyType, unpack( params ) )
-		else -- If no physics definitions are passed or a shape is missing, then the body is treated as a rect.
+		else
+			-- If no physics definitions are passed or the shape is missing, then the body is treated as a rect.
 			local rectParams = {
 				halfWidth = self.width * xScale * 0.5,
 				halfHeight = self.height * yScale * 0.5,
@@ -162,7 +184,7 @@ function M.addBody( ... )
 	end
 
 	-- Create the initial body without any morphing.
-	t[1]:morph( 1, 1 )
+	object:morph( 1, 1 )
 end
 
-return M
+return morph

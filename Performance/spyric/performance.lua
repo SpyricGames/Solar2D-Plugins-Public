@@ -1,90 +1,159 @@
-local M = {}
+---------------------------------------------------------------------------
+--     _____                  _         ______                           --
+--    / ___/____  __  _______(_)____   / ____/___ _____ ___  ___  _____  --
+--    \__ \/ __ \/ / / / ___/ / ___/  / / __/ __ `/ __ `__ \/ _ \/ ___/  --
+--   ___/ / /_/ / /_/ / /  / / /__   / /_/ / /_/ / / / / / /  __(__  )   --
+--  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
+--      /_/    /____/                                                    --
+--                                                                       --
+--  © 2020-2021 Spyric Games Ltd.             Last Updated: 22 May 2021  --
+---------------------------------------------------------------------------
+--  License: MIT                                                         --
+---------------------------------------------------------------------------
 
-----------------------------------
--- Customisable visual parameters:
-----------------------------------
-local x = display.contentCenterX
-local y = display.screenOriginY
-local paddingHorizontal = 20
-local paddingVertical = 10
-local fontColor = { 1 }
-local bgColor = { 0 }
-local fontSize = 28
-local font = "Helvetica"
-----------------------------------
+local performance = {}
+
+----------------------------------------------
+-- Default visual parameters:
+----------------------------------------------
+-- NB! These should be edited only via passing
+-- a table as an argument to start() function.
+----------------------------------------------
+local style = {
+    paddingHorizontal = 20,
+    paddingVertical = 10,
+    fontColor = {1},
+    bgColor = {0},
+    fontSize = 24,
+    fontOffsetY = 0,
+    anchorX = 0.5,
+    anchorY = 0.5,
+    x = 0,
+    y = 0,
+    font = native.systemFont,
+}
+----------------------------------------------
+
+performance.meter = nil
+local counter = nil
+local bg = nil
 
 -- Localising global functions.
 local getTimer = system.getTimer
 local getInfo = system.getInfo
+local format = string.format
 local floor = math.floor
+local tostring = tostring
+local cg = collectgarbage
 
 -- Constant is multiplied by 100 to allow for the use of floor() later on.
 local C = 100 / 1024^2
+local isActive = true
 local prevTime = 0
-M.isActive = true
-M.maxWidth = 0
+local maxWidth = 0
+local paddingHorizontal = 0
 
 
-local function update()
+local function updateMeter()
     local curTime = getTimer()
-    collectgarbage( "collect" )
-
-    M.text.text = tostring(floor( 1000 / (curTime - prevTime))) .. " " ..
-    tostring(floor(getInfo( "textureMemoryUsed" ) * C) * 0.01) .. " " ..
-    tostring(floor(collectgarbage( "count" )))
-
-    -- Adjust the performance meter width if necessary.
-    if M.text.width > M.maxWidth then
-        M.maxWidth = M.text.width
-        M.bg.width = M.text.width + paddingHorizontal*2
+    cg( "collect" )
+    
+    -- Format: FPS, texture memory (in MB), Lua memory (in KB).
+    counter.text = tostring(floor( 1000 / (curTime - prevTime))) .. " " .. -- FPS
+    tostring(floor(getInfo( "textureMemoryUsed" ) * C) * 0.01) .. "MB " .. -- Texture memory
+    format( "%.2f KB", cg( "count" ) ) -- Lua memory
+    
+    -- Adjust the performance meter's width if necessary.
+    local currentWidth = counter.width
+    if currentWidth > maxWidth then
+        maxWidth = currentWidth
+        bg.width = currentWidth + paddingHorizontal
     end
-
-    M.bg:toFront()
-    M.text:toFront()
+    
     prevTime = curTime
 end
 
 
 local function toggleMeter( event )
-    if event.phase == "ended" or event.phase == "cancelled" then
-        collectgarbage( "collect" )
-
-        if M.isActive then
-            Runtime:removeEventListener( "enterFrame", update )
+    if event.phase == "ended" then
+        cg( "collect" )
+        
+        if isActive then
+            Runtime:removeEventListener( "enterFrame", updateMeter )
         else
-            Runtime:addEventListener( "enterFrame", update )
+            Runtime:addEventListener( "enterFrame", updateMeter )
         end
-        M.text.isVisible = not M.text.isVisible
-        M.bg.isVisible = not M.bg.isVisible
-        M.isActive = not M.isActive
+        counter.isVisible = not counter.isVisible
+        bg.isVisible = not bg.isVisible
+        isActive = not isActive
     end
 end
 
 
-local function createMeter()
-    M.text = display.newText( "00 0.00 0000", x, y + paddingVertical, font, fontSize )
-    M.text:setFillColor( unpack( fontColor ) )
-    M.text.anchorY = 0
-    M.maxWidth = M.text.width
-
-    M.bg = display.newRect( x, y, M.text.width + paddingHorizontal*2, M.text.height + paddingVertical*2 )
-    M.bg:addEventListener( "touch", toggleMeter )
-    M.bg:setFillColor( unpack( bgColor ) )
-    M.bg.isHitTestable = true
-    M.bg.anchorY = 0
+function performance.stop()
+    if isActive then
+        isActive = false
+        Runtime:removeEventListener( "enterFrame", updateMeter )
+    end
 end
 
 
-function M:start( startVisible )
-    createMeter()
-    if type( startVisible ) == "boolean" and startVisible == false then
-        M.text.isVisible = not M.text.isVisible
-        M.bg.isVisible = not M.bg.isVisible
-        M.isActive = not M.isActive
+function performance.destroy()
+    performance.stop()
+    display.remove(performance.meter)
+    performance.meter = nil
+    counter = nil
+    bg = nil
+end
+
+-- Creates and/or starts an existing performance meter that tracks FPS, texture memory & Lua memory usage.
+-- Two optional parameters are: startVisible (boolean) and params (table) for visual customisation.
+function performance.start(...)
+    if performance.meter then
+        if not isActive then
+            isActive = true
+            Runtime:addEventListener( "enterFrame", updateMeter )
+        end
     else
-        Runtime:addEventListener( "enterFrame", update )
+        local t = {...}
+        local startVisible = type(t[1]) ~= "boolean" or t[1]
+        local customStyle = type(t[#t]) == "table" and t[#t] or {}
+        
+        performance.meter = display.newGroup()
+        if customStyle.parent then
+            customStyle.parent:insert(performance.meter)
+        end
+        
+        -- Update style with user input.
+        for i, v in pairs( customStyle ) do
+            if i ~= "parent" then
+                style[i] = v
+            end
+        end
+        performance.meter.x, performance.meter.y = style.x, style.y
+        performance.meter.anchorX, performance.meter.anchorY = style.anchorX, style.anchorY
+        paddingHorizontal = style.paddingHorizontal*2
+        
+        counter = display.newText( performance.meter, "00 0.00 0000", 0, style.fontOffsetY, style.font, style.fontSize )
+        counter:setFillColor( unpack( style.fontColor ) )
+        maxWidth = counter.width
+        
+        bg = display.newRect( performance.meter, 0, 0, counter.width + paddingHorizontal, counter.height + style.paddingVertical*2 )
+        bg:addEventListener( "touch", toggleMeter )
+        bg:setFillColor( unpack( style.bgColor ) )
+        bg.isHitTestable = true
+        
+        counter:toFront()
+        
+        counter.isVisible = startVisible
+        bg.isVisible = startVisible
+        isActive = startVisible
+        
+        if startVisible then
+            Runtime:addEventListener( "enterFrame", updateMeter )
+        end
     end
 end
 
 
-return M
+return performance

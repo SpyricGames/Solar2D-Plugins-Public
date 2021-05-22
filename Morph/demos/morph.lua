@@ -17,18 +17,23 @@ function scene:create( event )
 	objectGroup = display.newGroup()
 	sceneGroup:insert( objectGroup )
 
-	local title = display.newText( sceneGroup, event.params[1], display.contentCenterX, composer.header.y, composer.font, composer.header.size )
-	title:setFillColor( composer.colourA[1], composer.colourA[2], composer.colourA[3] )
-
-	local button = btn.new( title )
+	local button = btn.new()
 	sceneGroup:insert( button )
 
-	local description = display.newText( sceneGroup, ":morph() can be used to create a new or to scale an existing physics body and its display object with a single line of code.", display.contentCenterX, title.y + title.height*0.5 + 8, 600, 400, composer.font, composer.body.size )
-	description.anchorY = 0
+	local title = display.newText( sceneGroup, event.params[1], button.x - button.width*0.5, button.y + 80, "demoScene/font/Roboto-Regular.ttf", 40 )
+	title:setFillColor( 252/255, 186/255, 4/255 )
+	title.anchorX = 0
+
+	local description = display.newText( sceneGroup,
+		"With morph, you can scale and flip display objects and their associated physics bodies with a single line of code.\n\n" .. 
+		"object:morph( 1, 1 )",
+		title.x, title.y + title.height + 12, 440, 0, "demoScene/font/Roboto-Regular.ttf", 24
+	)
+	description.anchorX, description.anchorY = 0, 0
 
 	local chicken = display.newImage( objectGroup, "chicken.png")
-	chicken.x = display.contentCenterX
-	chicken.y =  display.contentCenterY + 80
+	chicken.x = display.contentCenterX + 220
+	chicken.y =  display.contentCenterY
 	spyricMorph.addBody( chicken, "static", physicsData:get("chicken") )
 
 	-- Randomly flip and morph the chicken.
@@ -44,10 +49,13 @@ function scene:create( event )
 			yMultiplier = -1
 		end
 		local yScale = random(50,300)*0.01*yMultiplier
+		
+		-- Update the description text to match the on-going scaling values.
+		description.text = description.text:sub(1,130) .. xScale .. ", " .. yScale .. " )"
 
 		chicken:morph( xScale, yScale )
 	end
-	flipTimer = timer.performWithDelay( 350, flip, 0 )
+	flipTimer = timer.performWithDelay( 500, flip, 0 )
 
 	objectGroup.alpha = 0
 	transition.to( objectGroup, { time=600, alpha=1, transition=easing.outQuad } )

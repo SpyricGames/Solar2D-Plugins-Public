@@ -10,22 +10,33 @@ local spyricMorph = require("spyric.morph")
 local objectGroup
 
 function scene:create( event )
-
 	local sceneGroup = self.view
 	objectGroup = display.newGroup()
 	sceneGroup:insert( objectGroup )
 
-	local title = display.newText( sceneGroup, event.params[1], display.contentCenterX, composer.header.y, composer.font, composer.header.size )
-	title:setFillColor( composer.colourA[1], composer.colourA[2], composer.colourA[3] )
-
-	local button = btn.new( title )
+	local button = btn.new()
 	sceneGroup:insert( button )
 
-	local description = display.newText( sceneGroup, "You can load any shape made using the PhysicsEditor and morph them freely.", display.contentCenterX, title.y + title.height*0.5 + 8, 600, 400, composer.font, composer.body.size )
-	description.anchorY = 0
+	local title = display.newText( sceneGroup, event.params[1], button.x - button.width*0.5, button.y + 80, "demoScene/font/Roboto-Regular.ttf", 40 )
+	title:setFillColor( 252/255, 186/255, 4/255 )
+	title.anchorX = 0
 
-	local xCentre = display.contentCenterX
-	local yCentre = display.contentCenterY + 80
+	local description = display.newText( sceneGroup,
+		"You can load any shape created using the PhysicsEditor software and morph them with only only a few lines of code.", 
+		title.x, title.y + title.height + 12, 440, 0, "demoScene/font/Roboto-Regular.ttf", 24
+	)
+	description.anchorX, description.anchorY = 0, 0
+
+	local codeExample = display.newText( sceneGroup,
+		"local object = display.newImage( \"chicken.png\")\n" ..
+		"spyricMorph.addBody( object, physicsData:get(\"chicken\") )\n" ..
+		"object:morph( 1, 1 )",
+		title.x, description.y + description.height + 26, 460, 0, "demoScene/font/Roboto-Black.ttf", 17
+	)
+	codeExample.anchorX, codeExample.anchorY = 0, 0
+
+	local xCentre = display.contentCenterX + 220
+	local yCentre = display.contentCenterY 
 	local imageOffset = 140
 	local imageScale = 1.4
 
@@ -58,9 +69,9 @@ function scene:create( event )
 	chickenMirrorHV:morph( -imageScale, -imageScale )
 
 	-- The lines between the chickens.
-	local line1 = display.newLine( objectGroup, xCentre, yCentre-240, xCentre, yCentre+240 )
+	local line1 = display.newLine( objectGroup, xCentre, yCentre-220, xCentre, yCentre+220 )
 	line1.strokeWidth = 4
-	local line2 = display.newLine( objectGroup, xCentre-240, yCentre, xCentre+240, yCentre )
+	local line2 = display.newLine( objectGroup, xCentre-220, yCentre, xCentre+220, yCentre )
 	line2.strokeWidth = 4
 
 	objectGroup.alpha = 0

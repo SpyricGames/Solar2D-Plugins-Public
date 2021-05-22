@@ -1,47 +1,44 @@
-local composer = require( "composer" )
-
 local ui = {}
 
--- Simple function for creating backgrounds for demo scenes across Spyric plugins and code samples.
-function ui.create( group )
+local textColour = { 0.94, 0.67, 0.16 }
+local font = "fonts/OpenSans/OpenSansRegular.ttf"
+local fadeAlpha = 0.5
+
+local headerHeight = 20
+local footerHeight = 20
+
+-- Create a default UI for the sample project.
+function ui.create()
 	display.setDefault( "background", 0.12 )
-	composer.fontColour = { 0.94, 0.67, 0.16 }
-	composer.font = "demoUI/OpenSans/OpenSansRegular.ttf"
 
-	local fadeAlpha = 0.5
-
-	local spyricLogo = display.newImageRect( "demoUI/spyric.png", 512, 512 )
-	spyricLogo.xScale, spyricLogo.yScale = 0.75, 0.75
+	local spyricLogo = display.newImageRect( "demoScene/spyric.png", 512, 512 )
+	spyricLogo.alpha = fadeAlpha
 	spyricLogo.x = display.contentCenterX
 	spyricLogo.y = display.contentCenterY
-	spyricLogo.alpha = fadeAlpha
 
-	local topArea = display.newRect( display.contentCenterX, display.screenOriginY, display.actualContentWidth, 80 )
-	topArea:setFillColor( 0, 0, 0, fadeAlpha )
-	topArea.anchorY = 0
+	local banner = display.newRect( display.contentCenterX, display.screenOriginY, display.actualContentWidth, headerHeight )
+	banner:setFillColor( 0, 0, 0, fadeAlpha )
+	banner.anchorY = 0
 
-	local topText = display.newText( "Spyric Print To Display - Sample Project", topArea.x, topArea.y + topArea.height*0.5, composer.font, 20 )
-	topText:setFillColor( unpack( composer.fontColour ) )
+	local header = display.newText( "Spyric Font Loader - Demo", banner.x, banner.y + banner.height*0.5, font, 28 )
+	header:setFillColor( unpack( textColour ) )
 
-	local bottomArea = display.newRect( display.contentCenterX, display.contentHeight-display.screenOriginY, display.actualContentWidth, 80 )
-	bottomArea:setFillColor( 0, 0, 0, fadeAlpha )
-	bottomArea.anchorY = 1
+	local footer = display.newRect( display.contentCenterX, display.contentHeight-display.screenOriginY, display.actualContentWidth, footerHeight )
+	footer:setFillColor( 0, 0, 0, fadeAlpha )
+	footer.anchorY = 1
 
-	local contents =
-	{
-		text = "Spyric Print To Display is a free plugin for Solar2D.\nFor documentation, please visit www.spyric.com/docs.",
-		x = bottomArea.x,
-		y = bottomArea.y - bottomArea.height*0.5,
-		width = 800,
-		font = composer.font,
-		fontSize = 20,
-		align = "center"
+	local contents = {
+	    text = "Spyric Font Loader is a free plugin for Corona SDK.\nFor documentation, please visit www.spyric.com.",
+	    x = footer.x,
+	    y = footer.y - footer.height*0.5,
+	    width = 560,
+	    font = font,
+	    fontSize = 24,
+	    align = "center"
 	}
 
-	local bottomText = display.newText( contents )
-	bottomText:setFillColor( unpack( composer.fontColour ) )
-
-	display.getCurrentStage():insert( composer.stage )
+	local description = display.newText( contents )
+	description:setFillColor( unpack( textColour ) )
 end
 
 return ui

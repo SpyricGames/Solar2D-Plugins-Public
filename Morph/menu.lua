@@ -10,8 +10,8 @@ end
 function scene:create( event )
 	local sceneGroup = self.view
 
-	local title = display.newText( sceneGroup, "SELECT A DEMO", display.contentCenterX, composer.header.y, composer.font, composer.header.size )
-	title:setFillColor( composer.colourA[1], composer.colourA[2], composer.colourA[3] )
+	local title = display.newText( sceneGroup, "SELECT A DEMO", display.contentCenterX, 140, "demoScene/font/Roboto-Black.ttf", 46 )
+	title:setFillColor( 252/255, 186/255, 4/255 )
 
 	local buttonLabel = {
 		"object:morph()",
@@ -37,18 +37,26 @@ function scene:create( event )
 				shape = "rectangle",
 				width = 400,
 				height = 48,
-				font = composer.font,
-				fontSize = composer.body.size,
-				fillColor = { default=composer.colourA, over=composer.colourAPress },
+				font = "demoScene/font/Roboto-Regular.ttf",
+				fontSize = 24,
+				fillColor = { default={252/255, 186/255, 4/255}, over={255/255, 200/255, 32/255} },
 				labelColor = { default={ 0 }, over={ 0 } },
 				onRelease = onButtonRelease
 			}
 		)
-		print( composer.body.size )
+		
 		button.name = buttonLabel[i]
 		button.x = display.contentCenterX
-		button.y = composer.header.y + i*60
+		button.y = 140 + i*60
 		sceneGroup:insert( button )
+	end
+	
+	if _G.isHTML5 then
+		local htmlDisclaimer = display.newText( sceneGroup,
+			"Important: HTML5 builds don't currently support debug or hybrid physics draw mode.\n" .. 
+			"In order to see the physics body manipulations, run this project on another platform.",
+			display.contentCenterX, display.maxY - 50, "demoScene/font/Roboto-Regular.ttf", 20
+		)
 	end
 end
 

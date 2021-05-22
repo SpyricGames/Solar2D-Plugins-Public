@@ -1,79 +1,58 @@
-display.setStatusBar( display.HiddenStatusBar )
-local demoScene = require( "demoScene.ui" )
-demoScene.create()
+---------------------------------------------------------------------------
+--     _____                  _         ______                           --
+--    / ___/____  __  _______(_)____   / ____/___ _____ ___  ___  _____  --
+--    \__ \/ __ \/ / / / ___/ / ___/  / / __/ __ `/ __ `__ \/ _ \/ ___/  --
+--   ___/ / /_/ / /_/ / /  / / /__   / /_/ / /_/ / / / / / /  __(__  )   --
+--  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
+--      /_/    /____/                                                    --
+--                                                                       --
+--  © 2020-2021 Spyric Games Ltd.             Last Updated: 21 May 2021  --
+---------------------------------------------------------------------------
+--  License: MIT                                                         --
+---------------------------------------------------------------------------
 
--- require the Spyric Font Loader plugin
-local fontLoader = require("plugin.spyricFontLoader")
-fontLoader.preload( "fonts", {consoleOutput=true, deepScan=true} ) 
+-- Set up the demo scene UI.
+local demoScene = require( "demoScene.ui" ).create( "Spyric Font Loader", true )
 
---[[
-	This sample project is just for informational purposes. In order to use the plugin
-	and to preload your fonts, all you need to do is run the following function ONCE:
-
-	fontLoader.preload( folder, deepScan, [directory], [consoleOutput] )
-
-	where,
-
-	folder = folder with the fonts (string)
-	deepScan = option to scan all possible subfolders of the given folder (boolean)
-	[directory] = (optional) you can specify the directory, e.g. ResourceDirectory (default) or DocumentsDirectory, etc. (userdata)
-	[consoleOutput] = (optional) if true, the plugin will output a detailed event log into console (boolean)
-]]--
-
-local font = "fonts/OpenSans/OpenSansRegular.ttf"
-local textColour = { 0.94, 0.67, 0.16 }
-
+-- Require the Spyric Font Loader plugin.
+local fontLoader = require( "spyric.fontLoader" )
 
 local description = display.newText(
-	"When you use a font for the very first time after your Corona project starts, "..
-	"Corona will first cache that font. Depending on the device and platform, this will roughly take between 3ms and 300ms per font file.",
-	display.contentCenterX, 74, 608, 400, font, 30
+	"When Solar2D uses a font for the first time during runtime, it will cache the font. "..
+	"Depending on what device and platform your game is running on, this may take between 3ms and 300ms per font.\n\n"..
+	"By preloading your fonts before you actually need to use them, you can prevent these \"lag spikes\" by controlling when the caching occurs.\n\n"..
+	"Total number of fonts loaded: ",
+	display.contentCenterX, display.minY + 20, 820, 0, "demoScene/font/Roboto-Regular.ttf", 24
 )
 description.anchorY = 0
 
-
--- creating the load times as well as the bottom paragraph
-local round, getTimer = math.round, system.getTimer
-local startTime, str
-local txt, loadTime = {}, {}
-
-
-for i = 1, 8 do
-	startTime = system.getTimer()
+-- Run Spyric Font Loader and display preloading times.
+local fontCount 
+for i = 1, 5 do
+	local loopStart = system.getTimer()
+	
 	if i == 1 then
-		fontLoader.preload( "fonts", {consoleOutput=true, deepScan=true} ) -- provide console output for the first preload
+		 -- Using consoleOutput will provide detailed console logs of what's happening.
+		fontCount = fontLoader.preload( "fonts", {consoleOutput=true, deepScan=true} )
 	else
 		fontLoader.preload( "fonts", {deepScan=true} )
 	end
-	loadTime[i] = round((getTimer()-startTime)*100)*0.01
+	
+	local loadTime, s = math.round((system.getTimer()-loopStart)*100)*0.01
 	if i == 1 then
-		str = "1st load time (preload): "..loadTime[i].."ms"
+		s = "1st load time (preloading): " .. loadTime .. "ms"
 	elseif i == 2 then
-		str = "2nd load time: "..loadTime[i].."ms"
+		s = "2nd load time: " .. loadTime .. "ms"
 	elseif i == 3 then
-		str = "3rd load time: "..loadTime[i].."ms"
+		s = "3rd load time: " .. loadTime .. "ms"
 	else
-		str = i.."th load time: "..loadTime[i].."ms"
+		s = i.."th load time: " .. loadTime .. "ms"
 	end
-	txt[i] = display.newText( str, 40, 270 + 40*i, font, 30 )
-	txt[i]:setFillColor( unpack( textColour ) )
-	txt[i].anchorX = 0
+	
+	local text = display.newText( s, description.x - description.width*0.5, description.y + description.height + 40*i, "demoScene/font/Roboto-Regular.ttf", 24 )
+	text:setFillColor( 252/255, 186/255, 4/255 )
+	text.anchorX = 0
 end
 
-
--- calculate the average load time and see how much faster creating text objects is after preloading
-local averageTime = 0
-for i = 2, #loadTime do
-	averageTime = averageTime + loadTime[i]
-end
-averageTime =  averageTime/(#loadTime-1)
-local comparison = round( loadTime[1] / averageTime * 10 )*0.1
-
-
-local bottomParagraph = display.newText(
-	"Loading all of this demo's fonts, as well as two native system fonts, for the first time took "..loadTime[1].."ms. "..
-	"After preloading, loading the same fonts was "..comparison.." times faster. "..
-	"Is this enough for you to preload your fonts?",
-	display.contentCenterX, 624, 608, 400, font, 30
-)
-bottomParagraph.anchorY = 0
+-- Dynamically show how many fonts in total were loaded.
+description.text = description.text .. fontCount
