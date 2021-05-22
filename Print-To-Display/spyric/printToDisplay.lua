@@ -1,9 +1,22 @@
+---------------------------------------------------------------------------
+--     _____                  _         ______                           --
+--    / ___/____  __  _______(_)____   / ____/___ _____ ___  ___  _____  --
+--    \__ \/ __ \/ / / / ___/ / ___/  / / __/ __ `/ __ `__ \/ _ \/ ___/  --
+--   ___/ / /_/ / /_/ / /  / / /__   / /_/ / /_/ / / / / / /  __(__  )   --
+--  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
+--      /_/    /____/                                                    --
+--                                                                       --
+--  © 2020-2021 Spyric Games Ltd.             Last Updated: 22 May 2021  --
+---------------------------------------------------------------------------
+--  License: MIT                                                         --
+---------------------------------------------------------------------------
+
 --==============================================================================
 -- Important! Important! Important! Important! Important! Important! Important!
 --==============================================================================
 -- If you want to make changes to this module and you need to use debug prints,
--- then make sure to use "_print()" inside the functions because using "print()"
--- inside the wrong function will result in an infinite loop.
+-- then make sure to use _print() inside of thse functions because using the 
+-- regular print() inside the wrong function will result in an infinite loop.
 --==============================================================================
 
 local M = {}
