@@ -6,34 +6,51 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.             Last Updated: 22 May 2021  --
+--  © 2020-2021 Spyric Games Ltd.             Last Updated: 29 May 2021  --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
+
+-- Spyric Print To Display is a simple to use Solar2D plugin for displaying
+-- print() outputs on an in-app console as well as in the simulator console.
+-- This makes debugging on devices easier as no external tools are needed.
 
 --==============================================================================
 -- Important! Important! Important! Important! Important! Important! Important!
 --==============================================================================
 -- If you want to make changes to this module and you need to use debug prints,
--- then make sure to use _print() inside of thse functions because using the 
+-- then make sure to use _print() inside of these functions because using the 
 -- regular print() inside the wrong function will result in an infinite loop.
 --==============================================================================
 
-local M = {}
+local printToDisplay = {}
+
+--[[
+    TODO:
+    - Add button for "jump to newest entry"
+    - Add button for "hide console"
+    - Performance improvements!
+    - Move the stylise to start (have option to start open or closed).
+    - Copy code from Solar2D Playground version.
+]]
 
 -- Localised functions.
 local _print = print
-local _type = type
-local _unpack = unpack
-local _tostring = tostring
-local _concat = table.concat
+local tConcat = table.concat
+local tostring = tostring
+local unpack = unpack
+local type = type
 
-M.autoscroll = true
+printToDisplay.autoscroll = true
 local canScroll = false
 local started = false
 local output
 
 -- Visual customisation variables.
+local style = {
+    
+}
+
 local parent
 local font = native.systemFont
 local buttonSize = 32
@@ -75,19 +92,19 @@ local function scroll( event )
             local d = event.y - eventStart
             local toY = objectStart + d
             if toY <= 0 and toY >= -maxY then
-                M.autoscroll = false
-                M.controls.symbolAutoscrollOn.isVisible = false
-                M.controls.symbolAutoscrollOffA.isVisible = true
-                M.controls.symbolAutoscrollOffB.isVisible = true
+                printToDisplay.autoscroll = false
+                printToDisplay.controls.symbolAutoscrollOn.isVisible = false
+                printToDisplay.controls.symbolAutoscrollOffA.isVisible = true
+                printToDisplay.controls.symbolAutoscrollOffB.isVisible = true
                 output.y = toY
             else
                 objectStart = output.y
                 eventStart = event.y
                 if toY <= 0 then
-                    M.autoscroll = true
-                    M.controls.symbolAutoscrollOn.isVisible = true
-                    M.controls.symbolAutoscrollOffA.isVisible = false
-                    M.controls.symbolAutoscrollOffB.isVisible = false
+                    printToDisplay.autoscroll = true
+                    printToDisplay.controls.symbolAutoscrollOn.isVisible = true
+                    printToDisplay.controls.symbolAutoscrollOffA.isVisible = false
+                    printToDisplay.controls.symbolAutoscrollOffB.isVisible = false
                 end
             end
         end
@@ -102,18 +119,18 @@ end
 local function controls( event )
     if event.phase == "began" then
         if event.target.id == "autoscroll" then
-            M.autoscroll = not M.autoscroll
-            M.controls.symbolAutoscrollOn.isVisible = not M.controls.symbolAutoscrollOn.isVisible
-            M.controls.symbolAutoscrollOffA.isVisible = not M.controls.symbolAutoscrollOffA.isVisible
-            M.controls.symbolAutoscrollOffB.isVisible = not M.controls.symbolAutoscrollOffB.isVisible
-            if M.autoscroll then output.y = -maxY end
+            printToDisplay.autoscroll = not printToDisplay.autoscroll
+            printToDisplay.controls.symbolAutoscrollOn.isVisible = not printToDisplay.controls.symbolAutoscrollOn.isVisible
+            printToDisplay.controls.symbolAutoscrollOffA.isVisible = not printToDisplay.controls.symbolAutoscrollOffA.isVisible
+            printToDisplay.controls.symbolAutoscrollOffB.isVisible = not printToDisplay.controls.symbolAutoscrollOffB.isVisible
+            if printToDisplay.autoscroll then output.y = -maxY end
         else -- Clear all text.
-            M.ui.bg:removeEventListener( "touch", scroll )
+            printToDisplay.ui.bg:removeEventListener( "touch", scroll )
             canScroll = false
-            M.autoscroll = true
-            M.controls.symbolAutoscrollOn.isVisible = true
-            M.controls.symbolAutoscrollOffA.isVisible = false
-            M.controls.symbolAutoscrollOffB.isVisible = false
+            printToDisplay.autoscroll = true
+            printToDisplay.controls.symbolAutoscrollOn.isVisible = true
+            printToDisplay.controls.symbolAutoscrollOffA.isVisible = false
+            printToDisplay.controls.symbolAutoscrollOffB.isVisible = false
             output.y = 0
             for i = 1, #output.row do
                 display.remove( output.row[i] )
@@ -125,12 +142,12 @@ local function controls( event )
 end
 
 -- Add a new chunk of text to the output window.
-local function printToDisplay( ... )
+local function outputToConsole( ... )
     local t = {...}
     for i = 1, #t do
-        t[i] = _tostring( t[i] )
+        t[i] = tostring( t[i] )
     end
-    local text = _concat( t, "    " )
+    local text = tConcat( t, "    " )
 
     local _y
     if #output.row > 0 then
@@ -153,31 +170,31 @@ local function printToDisplay( ... )
 
     if useHighlighting then
         if output.row[#output.row].text:sub(1,6) == "ERROR:" then
-            output.row[#output.row]:setFillColor( _unpack( textColorError ) )
+            output.row[#output.row]:setFillColor( unpack( textColorError ) )
         elseif output.row[#output.row].text:sub(1,8) == "WARNING:" then
-            output.row[#output.row]:setFillColor( _unpack( textColorWarning ) )
+            output.row[#output.row]:setFillColor( unpack( textColorWarning ) )
         else
-            output.row[#output.row]:setFillColor( _unpack( textColor ) )
+            output.row[#output.row]:setFillColor( unpack( textColor ) )
         end
     else
-        output.row[#output.row]:setFillColor( _unpack( textColor ) )
+        output.row[#output.row]:setFillColor( unpack( textColor ) )
     end
 
     if not canScroll and output.row[#output.row].y + output.row[#output.row].height >= scrollThreshold then
-        M.ui.bg:addEventListener( "touch", scroll )
+        printToDisplay.ui.bg:addEventListener( "touch", scroll )
         canScroll = true
     end
 
     if canScroll then
         maxY = output.row[#output.row].y + output.row[#output.row].height - scrollThreshold
-        if M.autoscroll then
+        if printToDisplay.autoscroll then
             output.y = -maxY
         end
     end
 end
 
 -- Optional function that will customise any or all visual features of the module.
-function M.setStyle( s )
+function printToDisplay.setStyle( s )
     if type( s ) ~= "table" then
         print( "WARNING: bad argument to 'setStyle' (table expected, got " .. type( s ) .. ")." )
     else -- Validate all and update only valid, passed parameters.
@@ -202,44 +219,44 @@ function M.setStyle( s )
         if type( s.bgColor ) == "table" then bgColor = s.bgColor end
         if type( s.alpha ) == "number" then alpha = s.alpha end
         scrollThreshold = (height-(paddingTop+paddingBottom))*0.5
-        -- If printToDisplay is already running, then clear it.
+        -- If outputToConsole is already running, then clear it.
         if started then
-            M.stop()
-            M.start()
+            printToDisplay.stop()
+            printToDisplay.start()
         end
     end
 end
 
 -- Create the UI and make the default print() calls also "print" on screen.
-function M.start()
+function printToDisplay.start()
     if not started then
         started = true
         -- Create container where the background and text are added.
-        M.ui = display.newContainer( width, height )
-        if parent then parent:insert( M.ui ) end
-        M.ui.anchorX, M.ui.anchorY = anchorX, anchorY
-        M.ui.x, M.ui.y = x, y
-        M.ui.alpha = alpha
+        printToDisplay.ui = display.newContainer( width, height )
+        if parent then parent:insert( printToDisplay.ui ) end
+        printToDisplay.ui.anchorX, printToDisplay.ui.anchorY = anchorX, anchorY
+        printToDisplay.ui.x, printToDisplay.ui.y = x, y
+        printToDisplay.ui.alpha = alpha
         -- Create the background.
-        M.ui.bg = display.newRect( M.ui, 0, 0, width, height )
-        M.ui.bg:setFillColor( _unpack( bgColor ) )
+        printToDisplay.ui.bg = display.newRect( printToDisplay.ui, 0, 0, width, height )
+        printToDisplay.ui.bg:setFillColor( unpack( bgColor ) )
         -- All rows of text are added to output group.
         output = display.newGroup()
-        M.ui:insert( output, true )
+        printToDisplay.ui:insert( output, true )
         output.row = {}
         -- Create external control buttons
-        M.controls = display.newGroup()
-        if parent then parent:insert( M.controls ) end
+        printToDisplay.controls = display.newGroup()
+        if parent then parent:insert( printToDisplay.controls ) end
 
         local SEG = buttonSize*0.2 -- Segment.
         local HW = buttonSize*0.4 -- (Approximate) half width.
         local buttonOffsetX = (1-anchorX)*width
         local buttonOffsetY = anchorY*height
 
-        M.controls.scroll = display.newRect( M.controls, x+buttonOffsetX+buttonSize*0.5, y-buttonOffsetY+buttonSize*0.5, buttonSize, buttonSize )
-        M.controls.scroll:setFillColor( _unpack( buttonBaseColor ) )
-        M.controls.scroll:addEventListener( "touch", controls )
-        M.controls.scroll.id = "autoscroll"
+        printToDisplay.controls.scroll = display.newRect( printToDisplay.controls, x+buttonOffsetX+buttonSize*0.5, y-buttonOffsetY+buttonSize*0.5, buttonSize, buttonSize )
+        printToDisplay.controls.scroll:setFillColor( unpack( buttonBaseColor ) )
+        printToDisplay.controls.scroll:addEventListener( "touch", controls )
+        printToDisplay.controls.scroll.id = "autoscroll"
 
         local play = {
             -HW+SEG,-HW+SEG*0.5,
@@ -247,20 +264,20 @@ function M.start()
             -HW+SEG,HW-SEG*0.5
         }
         -- This has a "play" symbol and pressing it will pause autoscroll.
-        M.controls.symbolAutoscrollOn = display.newPolygon( M.controls, M.controls.scroll.x, M.controls.scroll.y, play )
-        M.controls.symbolAutoscrollOn:setFillColor( _unpack( buttonImageColor ) )
+        printToDisplay.controls.symbolAutoscrollOn = display.newPolygon( printToDisplay.controls, printToDisplay.controls.scroll.x, printToDisplay.controls.scroll.y, play )
+        printToDisplay.controls.symbolAutoscrollOn:setFillColor( unpack( buttonImageColor ) )
         -- This has the "pause" symbol and pressing it will resume autoscroll.
-        M.controls.symbolAutoscrollOffA = display.newRect( M.controls, M.controls.scroll.x, M.controls.scroll.y, HW+SEG, HW+SEG )
-        M.controls.symbolAutoscrollOffA:setFillColor( _unpack( buttonImageColor ) )
-        M.controls.symbolAutoscrollOffA.isVisible = false
-        M.controls.symbolAutoscrollOffB = display.newRect( M.controls, M.controls.scroll.x, M.controls.scroll.y, SEG, HW+SEG )
-        M.controls.symbolAutoscrollOffB:setFillColor( _unpack( buttonBaseColor ) )
-        M.controls.symbolAutoscrollOffB.isVisible = false
+        printToDisplay.controls.symbolAutoscrollOffA = display.newRect( printToDisplay.controls, printToDisplay.controls.scroll.x, printToDisplay.controls.scroll.y, HW+SEG, HW+SEG )
+        printToDisplay.controls.symbolAutoscrollOffA:setFillColor( unpack( buttonImageColor ) )
+        printToDisplay.controls.symbolAutoscrollOffA.isVisible = false
+        printToDisplay.controls.symbolAutoscrollOffB = display.newRect( printToDisplay.controls, printToDisplay.controls.scroll.x, printToDisplay.controls.scroll.y, SEG, HW+SEG )
+        printToDisplay.controls.symbolAutoscrollOffB:setFillColor( unpack( buttonBaseColor ) )
+        printToDisplay.controls.symbolAutoscrollOffB.isVisible = false
 
-        M.controls.clear = display.newRect( M.controls, x+buttonOffsetX+buttonSize*0.5, y-buttonOffsetY+buttonSize*1.5 + 10, buttonSize, buttonSize )
-        M.controls.clear:setFillColor( _unpack( buttonBaseColor ) )
-        M.controls.clear:addEventListener( "touch", controls )
-        M.controls.clear.id = "clear"
+        printToDisplay.controls.clear = display.newRect( printToDisplay.controls, x+buttonOffsetX+buttonSize*0.5, y-buttonOffsetY+buttonSize*1.5 + 10, buttonSize, buttonSize )
+        printToDisplay.controls.clear:setFillColor( unpack( buttonBaseColor ) )
+        printToDisplay.controls.clear:addEventListener( "touch", controls )
+        printToDisplay.controls.clear.id = "clear"
 
         local cross = {
             -HW,-HW+SEG,
@@ -277,12 +294,12 @@ function M.start()
             -SEG,0
         }
 
-        M.controls.symbolClear = display.newPolygon( M.controls, M.controls.clear.x, M.controls.clear.y, cross )
-        M.controls.symbolClear:setFillColor( _unpack( buttonImageColor ) )
+        printToDisplay.controls.symbolClear = display.newPolygon( printToDisplay.controls, printToDisplay.controls.clear.x, printToDisplay.controls.clear.y, cross )
+        printToDisplay.controls.symbolClear:setFillColor( unpack( buttonImageColor ) )
 
-        -- Finally, "hijack" the global print function and add the printToDisplay functionality.
+        -- Finally, "hijack" the global print function and add the outputToConsole functionality.
         function print( ... )
-            printToDisplay( ... )
+            outputToConsole( ... )
             _print( ... )
         end
         Runtime:addEventListener( "unhandledError", printUnhandledError )
@@ -290,19 +307,27 @@ function M.start()
 end
 
 -- Restore the normal functionality to print() and clean up the UI.
-function M.stop()
+function printToDisplay.remove()
     if started then
         started = false
         canScroll = false
         display.remove( output )
         output = nil
-        display.remove( M.controls )
-        M.controls = nil
-        display.remove( M.ui )
-        M.ui = nil
+        display.remove( printToDisplay.controls )
+        printToDisplay.controls = nil
+        display.remove( printToDisplay.ui )
+        printToDisplay.ui = nil
         print = _print -- Restore the normal global print function.
         Runtime:removeEventListener( "unhandledError", printUnhandledError )
     end
 end
 
-return M
+function printToDisplay.show()
+    
+end
+
+function printToDisplay.hide()
+    
+end
+
+return printToDisplay

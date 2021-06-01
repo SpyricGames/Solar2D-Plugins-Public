@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.             Last Updated: 22 May 2021  --
+--  © 2020-2021 Spyric Games Ltd.             Last Updated: 29 May 2021  --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -14,11 +14,10 @@
 -- Set up the demo scene UI.
 local demoScene = require( "demoScene.ui" ).create( "Spyric Print To Display", true )
 
+
 -----------------------------------------------------------------------
 
-local widget = require( "widget" )
-
--- All you need to do is require the plugin and start it.
+-- Require Spyric Print to Display.
 local printToDisplay = require( "spyric.printToDisplay" )
 -- Even setting the style is completely optional.
 printToDisplay.setStyle({
@@ -42,8 +41,8 @@ print("This is the in-app console.")
 print("")
 
 -- Add simple one sentence explanations for what the in-app console buttons do.
-local resumeText = display.newText( "< Pause/Resume autoscroll", display.screenOriginX+476, 100, "demoScene/font/Roboto-Regular.ttf", 20 )
-local clearText = display.newText( "< Clear all outputs", display.screenOriginX+432, 150, "demoScene/font/Roboto-Regular.ttf", 20 )
+local resumeText = display.newText( "❮  Pause/Resume autoscroll", display.screenOriginX+476, 100, "demoScene/font/Roboto-Regular.ttf", 20 )
+local clearText = display.newText( "❮  Clear all outputs", display.screenOriginX+432, 150, "demoScene/font/Roboto-Regular.ttf", 20 )
 
 local description = display.newText(
     "With Spyric Print To Display plugin, whenever you use the print() function, " ..
