@@ -1,2 +1,2 @@
-# Print-to-Display
-Description to be added.
+# Spyric Print to Display
+To be added.
