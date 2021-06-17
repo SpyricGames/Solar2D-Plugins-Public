@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.             Last Updated: 22 May 2021  --
+--  © 2020-2021 Spyric Games Ltd.            Last Updated: 18 June 2021  --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -31,6 +31,7 @@ local style = {
     x = 0,
     y = 0,
     font = native.systemFont,
+    framesBetweenUpdate = 0
 }
 ----------------------------------------------
 
@@ -52,24 +53,29 @@ local isActive = true
 local prevTime = 0
 local maxWidth = 0
 local paddingHorizontal = 0
-
+local framesBetweenUpdate = 0
+local frameCount = 0
 
 local function updateMeter()
     local curTime = getTimer()
-    cg( "collect" )
-    
-    -- Format: FPS, texture memory (in MB), Lua memory (in KB).
-    counter.text = tostring(floor( 1000 / (curTime - prevTime))) .. " " .. -- FPS
-    tostring(floor(getInfo( "textureMemoryUsed" ) * C) * 0.01) .. "MB " .. -- Texture memory
-    format( "%.2f KB", cg( "count" ) ) -- Lua memory
-    
-    -- Adjust the performance meter's width if necessary.
-    local currentWidth = counter.width
-    if currentWidth > maxWidth then
-        maxWidth = currentWidth
-        bg.width = currentWidth + paddingHorizontal
+    frameCount = frameCount+1
+    -- Run garbage collection and update text every frame by default.
+    if frameCount > framesBetweenUpdate then
+        frameCount = 0
+        cg( "collect" )
+        
+        -- Format: FPS, texture memory (in MB), Lua memory (in KB).
+        counter.text = tostring(floor( 1000 / (curTime - prevTime))) .. " " .. -- FPS
+        tostring(floor(getInfo( "textureMemoryUsed" ) * C) * 0.01) .. "MB " .. -- Texture memory
+        format( "%.2f KB", cg( "count" ) ) -- Lua memory
+        
+        -- Adjust the performance meter's width if necessary.
+        local currentWidth = counter.width
+        if currentWidth > maxWidth then
+            maxWidth = currentWidth
+            bg.width = currentWidth + paddingHorizontal
+        end
     end
-    
     prevTime = curTime
 end
 
@@ -111,6 +117,7 @@ end
 function performance.start(...)
     if performance.meter then
         if not isActive then
+            frameCount = 0
             isActive = true
             Runtime:addEventListener( "enterFrame", updateMeter )
         end
@@ -126,13 +133,13 @@ function performance.start(...)
         
         -- Update style with user input.
         for i, v in pairs( customStyle ) do
-            if i ~= "parent" then
-                style[i] = v
-            end
+            style[i] = v
         end
         performance.meter.x, performance.meter.y = style.x, style.y
         performance.meter.anchorX, performance.meter.anchorY = style.anchorX, style.anchorY
         paddingHorizontal = style.paddingHorizontal*2
+        framesBetweenUpdate = style.framesBetweenUpdate
+        frameCount = 0
         
         counter = display.newText( performance.meter, "00 0.00 0000", 0, style.fontOffsetY, style.font, style.fontSize )
         counter:setFillColor( unpack( style.fontColor ) )
