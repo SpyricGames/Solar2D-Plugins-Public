@@ -82,9 +82,9 @@ local function toggleSystemUI()
 end
 
 local function onSystemEvent(event)
-    if (event.type == "applicationStart") then
+    if event.type == "applicationStart" then
         toggleSystemUI()
-    elseif (event.type == "applicationResume") then
+    elseif event.type == "applicationResume" then
         toggleSystemUI()
     end
 end
