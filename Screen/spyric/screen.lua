@@ -31,7 +31,6 @@ local function update()
 	screen.centerY = display.contentCenterY
 	screen.diagonal = math.sqrt( display.actualContentWidth^2+ display.actualContentHeight^2)
 	
-	local topInset, leftInset, bottomInset, rightInset = display.getSafeAreaInsets()
 	screen.safe.minX = display.safeScreenOriginX
 	screen.safe.maxX = display.safeScreenOriginX + display.safeActualContentWidth
 	screen.safe.minY = display.safeScreenOriginY
