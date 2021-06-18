@@ -30,7 +30,8 @@ function ui.create( projectName, isFree )
 	display.setStatusBar( display.HiddenStatusBar )
 	display.setDefault( "background", 20/255, 21/255, 24/255 )
 	
-	local banner = display.newRect( display.contentCenterX, display.screenOriginY + headerHeight*0.5, display.actualContentWidth, headerHeight )
+	-- Make the header and the footer extra wide so that they'll remain fully visible even if the Android navbar gets hidden.
+	local banner = display.newRect( display.contentCenterX, display.screenOriginY + headerHeight*0.5, display.actualContentWidth*2, headerHeight )
 	banner:setFillColor( 0.03 )
 	
 	local spyricLogo = display.newImageRect( "demoScene/spyric-logo.png", 64, 64 )
@@ -40,7 +41,7 @@ function ui.create( projectName, isFree )
 	local header = display.newText( projectName .. " - Sample Project", banner.x, banner.y, "demoScene/font/Roboto-Black.ttf", 32 )
 	header:setFillColor( 252/255, 186/255, 4/255 )
 	
-	local footer = display.newRect( display.contentCenterX, display.contentHeight - display.screenOriginY - footerHeight*0.5, display.actualContentWidth, footerHeight )
+	local footer = display.newRect( display.contentCenterX, display.contentHeight - display.screenOriginY - footerHeight*0.5, display.actualContentWidth*2, footerHeight )
 	footer:setFillColor( 0.03 )
 
 	local description = display.newText({

@@ -28,15 +28,16 @@ function ui.create()
 	spyricLogo.alpha = fadeAlpha
 	spyricLogo.x = display.contentCenterX
 	spyricLogo.y = display.contentCenterY
-
-	local banner = display.newRect( display.contentCenterX, display.screenOriginY, display.actualContentWidth, headerHeight )
+	
+	-- Make the header and the footer extra wide so that they'll remain fully visible even if the Android navbar gets hidden.
+	local banner = display.newRect( display.contentCenterX, display.screenOriginY + headerHeight*0.5, display.actualContentWidth*2, headerHeight )
 	banner:setFillColor( 0, 0, 0, fadeAlpha )
 	banner.anchorY = 0
 
 	local header = display.newText( "Spyric Font Loader - Demo", banner.x, banner.y + banner.height*0.5, font, 28 )
 	header:setFillColor( unpack( textColour ) )
 
-	local footer = display.newRect( display.contentCenterX, display.contentHeight-display.screenOriginY, display.actualContentWidth, footerHeight )
+	local footer = display.newRect( display.contentCenterX, display.contentHeight-display.screenOriginY, display.actualContentWidth*2, footerHeight )
 	footer:setFillColor( 0, 0, 0, fadeAlpha )
 	footer.anchorY = 1
 
