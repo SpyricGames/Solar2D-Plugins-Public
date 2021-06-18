@@ -16,7 +16,6 @@ local demoScene = require( "demoScene.ui" ).create( "Spyric Screen", true )
 
 -- Require the screen module and set it to automatically monitor for resize events.
 local screen = require("spyric.screen")
-screen.monitorResize( true )
 
 local group = nil
 

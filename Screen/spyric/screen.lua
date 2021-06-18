@@ -42,19 +42,7 @@ local function update()
 	
 	if screen.callback then
 		screen.callback()
-	end
-end
-
--- Start or stop to automatically update screen properties on resize events.
-local isMonitoringResize = false
-function screen.monitorResize( state )
-	state = not not state -- Turns any input into Boolean.
-	if state and not isMonitoringResize then
-		isMonitoringResize = true
-		Runtime:addEventListener( "resize", update )
-	elseif not state and isMonitoringResize then
-		isMonitoringResize = false
-		Runtime:removeEventListener( "resize", update )
+		screen.callbackCalled = true
 	end
 end
 -- Create the initial screen properties.
@@ -82,6 +70,7 @@ end
 
 local function toggleSystemUI()
     display.setStatusBar( display.HiddenStatusBar )
+	update()
     if androidAPI then
         -- Android 4.4 KitKat (API 19): first version to support immersive navbar.
         if androidAPI >= 19 then
@@ -89,8 +78,6 @@ local function toggleSystemUI()
         else
             native.setProperty( "androidSystemUiVisibility", "lowProfile" )
         end
-	else
-		update()
     end
 end
 
@@ -101,7 +88,9 @@ local function onSystemEvent(event)
         toggleSystemUI()
     end
 end
-Runtime:addEventListener("system", onSystemEvent)
+
+Runtime:addEventListener( "resize", update )
+Runtime:addEventListener( "system", onSystemEvent)
 
 ---------------------------------------------------------------------------
 
