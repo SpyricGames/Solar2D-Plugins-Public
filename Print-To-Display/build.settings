@@ -11,7 +11,7 @@
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
 
--- Default build settings for all Spyric Games Ltd. plugins:
+-- Default build settings for all Spyric Games Ltd. sample plugin projects:
 
 settings = 
 {
