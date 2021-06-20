@@ -30,11 +30,13 @@ local _print = print
 local concat = table.concat
 local find = string.find
 local tostring = tostring
+local type = type
 
 -- Localised console variables.
 local blockTouch = true
 local autoscroll = true
 local canScroll = false
+local printList = {}
 local scrollThreshold = 0
 local currentY = 0
 local textX = 0
@@ -132,15 +134,14 @@ local function printUnhandledError( event )
 end
 
 -- Output a print to the in-app console.
-local function outputToConsole( ... )    
-    local t = {...}
-    for i = 1, #t do
-        t[i] = tostring( t[i] )
+local function outputToConsole( ... )
+    for i = 1, arg.n do
+        printList[i] = tostring( arg[i] )
     end
 
     local log = display.newText({
         parent = output,
-        text = concat( t, "    " ),
+        text = concat( printList, "    " ),
         x = textX,
         y = currentY,
         width = textWidth,
@@ -151,6 +152,11 @@ local function outputToConsole( ... )
     })
     log.anchorX, log.anchorY = 0, 0
     currentY = log.y + log.height + paddingRow
+    
+    -- Reduce, reuse and recycle.
+    for i = 1, arg.n do
+        printList[i] = nil
+    end
 
     if useHighlighting then
         if find( log.text, "ERROR:" ) == 1 then
