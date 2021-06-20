@@ -84,7 +84,7 @@ local style = {
     paddingBottom = 10,
     -- Console (functional):
     useHighlighting = true,
-    activeWhenHidden = false,
+    activeWhenHidden = true,
     blockTouch = true,
     -- Buttons:
     buttonPos = "right",
