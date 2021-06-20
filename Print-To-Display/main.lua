@@ -53,10 +53,3 @@ local button = require("button")
 for i = 1, 2 do
     local btn = button.new( i )
 end
-
-timer.performWithDelay( 1200, function()
-    printToDisplay.remove()
-    timer.performWithDelay( 1200, function()
-        printToDisplay.start()
-    end )
-end )
