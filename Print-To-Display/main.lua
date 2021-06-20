@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.             Last Updated: 29 May 2021  --
+--  © 2020-2021 Spyric Games Ltd.            Last Updated: 20 June 2021  --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -14,25 +14,17 @@
 -- Set up the demo scene UI.
 local demoScene = require( "demoScene.ui" ).create( "Spyric Print To Display", true )
 
-
 -----------------------------------------------------------------------
 
 -- Require Spyric Print to Display.
 local printToDisplay = require( "spyric.printToDisplay" )
--- Even setting the style is completely optional.
-printToDisplay.setStyle({
-    y = 80,
-    font = "demoScene/font/Roboto-Regular.ttf",
-    width = 300,
-    height = 480,
-    bgColor = {0,0,0,0.7},
-    buttonSize = 40,
-    fontSize = 16,
-    paddingRow = 10,
+
+-- Start the in-app console with custom visual settings.
+printToDisplay.start({
+    height = display.maxY - display.minY,
+	y = display.minY,
+    alpha=0.9,
 })
--- After start(), the prints will appear
--- both on the screen and in the console (simulator).
-printToDisplay.start()
 
 -----------------------------------------------------------------------
 
@@ -41,8 +33,12 @@ print("This is the in-app console.")
 print("")
 
 -- Add simple one sentence explanations for what the in-app console buttons do.
-local resumeText = display.newText( "❮  Pause/Resume autoscroll", display.screenOriginX+476, 100, "demoScene/font/Roboto-Regular.ttf", 20 )
-local clearText = display.newText( "❮  Clear all outputs", display.screenOriginX+432, 150, "demoScene/font/Roboto-Regular.ttf", 20 )
+local toggleText = display.newText( "❮  Hide/show the console", display.screenOriginX+360, 95, "demoScene/font/Roboto-Regular.ttf", 20 )
+toggleText.anchorX = 0
+local resumeText = display.newText( "❮  Pause/Resume autoscroll", display.screenOriginX+360, 137, "demoScene/font/Roboto-Regular.ttf", 20 )
+resumeText.anchorX = 0
+local clearText = display.newText( "❮  Clear all outputs", display.screenOriginX+360, 179, "demoScene/font/Roboto-Regular.ttf", 20 )
+clearText.anchorX = 0
 
 local description = display.newText(
     "With Spyric Print To Display plugin, whenever you use the print() function, " ..
@@ -57,3 +53,10 @@ local button = require("button")
 for i = 1, 2 do
     local btn = button.new( i )
 end
+
+timer.performWithDelay( 1200, function()
+    printToDisplay.remove()
+    timer.performWithDelay( 1200, function()
+        printToDisplay.start()
+    end )
+end )
