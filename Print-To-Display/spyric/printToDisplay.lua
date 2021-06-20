@@ -427,6 +427,9 @@ function printToDisplay.start(...)
         end
         
         consolePrint(true)
+        if not startVisible then
+            controls( {phase="began",target={id="toggle"}} )
+        end
     end
 end
 
