@@ -33,11 +33,12 @@ print("This is the in-app console.")
 print("")
 
 -- Add simple one sentence explanations for what the in-app console buttons do.
-local toggleText = display.newText( "❮  Hide/show the console", display.screenOriginX+360, 95, "demoScene/font/Roboto-Regular.ttf", 20 )
+local labelX = display.screenOriginX+display.actualContentWidth/3+40
+local toggleText = display.newText( "❮  Hide/show the console", labelX, 95, "demoScene/font/Roboto-Regular.ttf", 20 )
 toggleText.anchorX = 0
-local resumeText = display.newText( "❮  Pause/Resume autoscroll", display.screenOriginX+360, 137, "demoScene/font/Roboto-Regular.ttf", 20 )
+local resumeText = display.newText( "❮  Pause/Resume autoscroll", labelX, 137, "demoScene/font/Roboto-Regular.ttf", 20 )
 resumeText.anchorX = 0
-local clearText = display.newText( "❮  Clear all outputs", display.screenOriginX+360, 179, "demoScene/font/Roboto-Regular.ttf", 20 )
+local clearText = display.newText( "❮  Clear all outputs", labelX, 179, "demoScene/font/Roboto-Regular.ttf", 20 )
 clearText.anchorX = 0
 
 local description = display.newText(
