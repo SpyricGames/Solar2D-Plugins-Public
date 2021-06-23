@@ -90,7 +90,7 @@ local function onSystemEvent(event)
 end
 
 Runtime:addEventListener( "resize", update )
-Runtime:addEventListener( "system", onSystemEvent)
+Runtime:addEventListener( "system", onSystemEvent )
 
 ---------------------------------------------------------------------------
 
