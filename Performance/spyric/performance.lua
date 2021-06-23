@@ -22,19 +22,21 @@ local performance = {}
 local style = {
     paddingHorizontal = 20,
     paddingVertical = 10,
-    fontColor = {1},
-    bgColor = {0},
+    fontColor = { 1, 0.9 },
+    bgColor = { 0, 0.9 },
     fontSize = 24,
     fontOffsetY = 0,
     anchorX = 0.5,
-    anchorY = 0.5,
-    x = 0,
-    y = 0,
+    anchorY = 0,
+    x = display.contentCenterX,
+    y = display.screenOriginY,
     font = native.systemFont,
     framesBetweenUpdate = 0
 }
 ----------------------------------------------
 
+-- If you need to move the performance meter UI element later
+-- via code, you can do so via the performance.meter variable.
 performance.meter = nil
 local counter = nil
 local bg = nil
@@ -43,6 +45,7 @@ local bg = nil
 local getTimer = system.getTimer
 local getInfo = system.getInfo
 local format = string.format
+local concat = table.concat
 local floor = math.floor
 local tostring = tostring
 local cg = collectgarbage
@@ -55,19 +58,39 @@ local maxWidth = 0
 local paddingHorizontal = 0
 local framesBetweenUpdate = 0
 local frameCount = 0
+local FPS
+
+-- Avoid table rehashing & create initial string entries.
+local counterElements = { true, true, true, true, true }
+counterElements[1] = ""
+counterElements[2] = "   "
+counterElements[3] = ""
+counterElements[4] = "MB   "
+counterElements[5] = ""
+
 
 local function updateMeter()
     local curTime = getTimer()
+    local curFPS = floor( 1000 / (curTime - prevTime))
     frameCount = frameCount+1
+    
+    FPS[frameCount] = curFPS
+    
     -- Run garbage collection and update text every frame by default.
     if frameCount > framesBetweenUpdate then
         frameCount = 0
-        cg( "collect" )
         
-        -- Format: FPS, texture memory (in MB), Lua memory (in KB).
-        counter.text = tostring(floor( 1000 / (curTime - prevTime))) .. " " .. -- FPS
-        tostring(floor(getInfo( "textureMemoryUsed" ) * C) * 0.01) .. "MB " .. -- Texture memory
-        format( "%.2f KB", cg( "count" ) ) -- Lua memory
+        -- Calculate the average FPS and update the performance meter.
+        local avgFPS = 0
+        for i = 1, framesBetweenUpdate do
+            avgFPS = avgFPS + FPS[i]
+        end
+        avgFPS = floor(avgFPS/framesBetweenUpdate)
+        
+        counterElements[1] = avgFPS                                             -- FPS (average)
+        counterElements[3] = floor(getInfo( "textureMemoryUsed" ) * C) * 0.01   -- Texture memory
+        counterElements[5] = format( "%.2fKB", cg( "count" ) )                  -- Lua memory
+        counter.text = concat( counterElements, "" )
         
         -- Adjust the performance meter's width if necessary.
         local currentWidth = counter.width
@@ -127,10 +150,11 @@ function performance.start(...)
         local customStyle = type(t[#t]) == "table" and t[#t] or {}
         
         performance.meter = display.newGroup()
+        performance.meter.anchorChildren = true
         if customStyle.parent then
             customStyle.parent:insert(performance.meter)
         end
-        
+
         -- Update style with user input.
         for i, v in pairs( customStyle ) do
             style[i] = v
@@ -141,13 +165,18 @@ function performance.start(...)
         framesBetweenUpdate = style.framesBetweenUpdate
         frameCount = 0
         
+        FPS = {}
+        for i = 1, framesBetweenUpdate do
+            FPS[i] = 0
+        end
+        
         counter = display.newText( performance.meter, "00 0.00 0000", 0, style.fontOffsetY, style.font, style.fontSize )
-        counter:setFillColor( unpack( style.fontColor ) )
+        counter.fill = style.fontColor
         maxWidth = counter.width
         
         bg = display.newRect( performance.meter, 0, 0, counter.width + paddingHorizontal, counter.height + style.paddingVertical*2 )
         bg:addEventListener( "touch", toggleMeter )
-        bg:setFillColor( unpack( style.bgColor ) )
+        bg.fill = style.bgColor
         bg.isHitTestable = true
         
         counter:toFront()
