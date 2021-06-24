@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.            Last Updated: 18 June 2021  --
+--  © 2020-2021 Spyric Games Ltd.            Last Updated: 24 June 2021  --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -31,7 +31,7 @@ local style = {
     x = display.contentCenterX,
     y = display.screenOriginY,
     font = native.systemFont,
-    framesBetweenUpdate = 0
+    framesBetweenUpdate = 3
 }
 ----------------------------------------------
 
@@ -45,35 +45,31 @@ local bg = nil
 local getTimer = system.getTimer
 local getInfo = system.getInfo
 local format = string.format
-local concat = table.concat
 local floor = math.floor
 local tostring = tostring
 local cg = collectgarbage
 
 -- Constant is multiplied by 100 to allow for the use of floor() later on.
 local C = 100 / 1024^2
-local isActive = true
+local isActive = false
 local prevTime = 0
 local maxWidth = 0
 local paddingHorizontal = 0
-local framesBetweenUpdate = 0
+local framesBetweenUpdate = 3
 local frameCount = 0
 local FPS
 
--- Avoid table rehashing & create initial string entries.
-local counterElements = { true, true, true, true, true }
-counterElements[1] = ""
-counterElements[2] = "   "
-counterElements[3] = ""
-counterElements[4] = "MB   "
-counterElements[5] = ""
-
+-- Reset all necessary variables.
+local function reset()
+    isActive = true
+    frameCount = 0
+    prevTime = getTimer()
+end
 
 local function updateMeter()
     local curTime = getTimer()
     local curFPS = floor( 1000 / (curTime - prevTime))
     frameCount = frameCount+1
-    
     FPS[frameCount] = curFPS
     
     -- Run garbage collection and update text every frame by default.
@@ -87,10 +83,9 @@ local function updateMeter()
         end
         avgFPS = floor(avgFPS/framesBetweenUpdate)
         
-        counterElements[1] = avgFPS                                             -- FPS (average)
-        counterElements[3] = floor(getInfo( "textureMemoryUsed" ) * C) * 0.01   -- Texture memory
-        counterElements[5] = format( "%.2fKB", cg( "count" ) )                  -- Lua memory
-        counter.text = concat( counterElements, "" )
+        counter.text = avgFPS .. "   " ..                   -- FPS (average)
+        floor(getInfo( "textureMemoryUsed" ) * C) * 0.01 .. -- Texture memory
+        format( "MB   %.2fKB", cg( "count" ) )              -- Lua memory
         
         -- Adjust the performance meter's width if necessary.
         local currentWidth = counter.width
@@ -108,21 +103,21 @@ local function toggleMeter( event )
         cg( "collect" )
         
         if isActive then
+            isActive = false
             Runtime:removeEventListener( "enterFrame", updateMeter )
         else
+            reset()
             Runtime:addEventListener( "enterFrame", updateMeter )
         end
-        counter.isVisible = not counter.isVisible
-        bg.isVisible = not bg.isVisible
-        isActive = not isActive
+        counter.isVisible = isActive
+        bg.isVisible = isActive
     end
 end
 
 
 function performance.stop()
     if isActive then
-        isActive = false
-        Runtime:removeEventListener( "enterFrame", updateMeter )
+        toggleMeter({phase="ended"})
     end
 end
 
@@ -138,11 +133,11 @@ end
 -- Creates and/or starts an existing performance meter that tracks FPS, texture memory & Lua memory usage.
 -- Two optional parameters are: startVisible (boolean) and params (table) for visual customisation.
 function performance.start(...)
+    cg( "collect" )
+    
     if performance.meter then
         if not isActive then
-            frameCount = 0
-            isActive = true
-            Runtime:addEventListener( "enterFrame", updateMeter )
+            toggleMeter({phase="ended"})
         end
     else
         local t = {...}
@@ -163,14 +158,13 @@ function performance.start(...)
         performance.meter.anchorX, performance.meter.anchorY = style.anchorX, style.anchorY
         paddingHorizontal = style.paddingHorizontal*2
         framesBetweenUpdate = style.framesBetweenUpdate
-        frameCount = 0
         
         FPS = {}
         for i = 1, framesBetweenUpdate do
             FPS[i] = 0
         end
-        
-        counter = display.newText( performance.meter, "00 0.00 0000", 0, style.fontOffsetY, style.font, style.fontSize )
+            
+        counter = display.newText( performance.meter, "00   0.00MB   0.00KB", 0, style.fontOffsetY, style.font, style.fontSize )
         counter.fill = style.fontColor
         maxWidth = counter.width
         
@@ -183,9 +177,9 @@ function performance.start(...)
         
         counter.isVisible = startVisible
         bg.isVisible = startVisible
-        isActive = startVisible
         
         if startVisible then
+            reset()
             Runtime:addEventListener( "enterFrame", updateMeter )
         end
     end
