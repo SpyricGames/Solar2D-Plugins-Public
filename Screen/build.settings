@@ -23,7 +23,7 @@ settings =
 	orientation = 
 	{
 		default = "landscapeRight",
-		supported = { "landscapeRight" },
+		supported = { "landscapeRight", "landscapeLeft" },
 	},
 	
 	iphone =
@@ -48,8 +48,8 @@ settings =
 	excludeFiles =
 	{
 		all =		{ "LICENSE", "README.md" },
-		ios =		{ "*AndroidResources*", },
-		android =	{ "*.xcassets*", "*.storyboardc*", },
+		ios =		{ "*AndroidResources*" },
+		android =	{ "*.xcassets*", "*.storyboardc*" },
     	web =		{ "*.xcassets*", "*.storyboardc*", "*AndroidResources*" },
 		win32 =		{ "*.xcassets*", "*.storyboardc*", "*AndroidResources*" },
 		macos =		{ "*.xcassets*", "*.storyboardc*", "*AndroidResources*" },
