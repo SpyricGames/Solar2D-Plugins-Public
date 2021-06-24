@@ -29,10 +29,12 @@ local printToDisplay = {}
 local _print = print
 local concat = table.concat
 local find = string.find
+local sub = string.sub
 local tostring = tostring
 local type = type
 
 -- Localised console variables.
+local maxTextureSize = system.getInfo( "maxTextureSize" ) or 1024
 local blockTouch = true
 local autoscroll = true
 local canScroll = false
@@ -141,7 +143,7 @@ local function outputToConsole( ... )
 
     local log = display.newText({
         parent = output,
-        text = concat( printList, "    " ),
+        text = concat( printList, "\t" ),
         x = textX,
         y = currentY,
         width = textWidth,
@@ -150,6 +152,24 @@ local function outputToConsole( ... )
         font = font,
         fontSize = fontSize
     })
+    
+    -- Especially on mobile devices, if the user tries to print massive strings,
+    -- such sending a network request to a page and then trying to print out the
+    -- entire event.response, then the device may run out of texture memory.
+    if log.width >= maxTextureSize or log.height >= maxTextureSize then
+        display.remove(log)
+        log = display.newText({
+            parent = output,
+            text = "WARNING: message is too long to print:\n\n" .. sub(log.text,1,32) .. "...",
+            x = textX,
+            y = currentY,
+            width = textWidth,
+            align = "left",
+            height = 0,
+            font = font,
+            fontSize = fontSize
+        })
+    end
     log.anchorX, log.anchorY = 0, 0
     currentY = log.y + log.height + paddingRow
     
