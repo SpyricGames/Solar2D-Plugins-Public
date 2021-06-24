@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2021 Spyric Games Ltd.                  Last Updated: 22 June 2021 --
+--  © 2021 Spyric Games Ltd.                  Last Updated: 24 June 2021 --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -87,7 +87,8 @@ function UUID.new()
 	t[1] = platform:sub(1,1)
 	t[2] = socket and socket.gettime() or os.time()
 	t[3] = system.getTimer()*10 - startTime
-	return table.concat( t, "-" ):gsub("%.","-")
+	local output = table.concat( t, "-" ):gsub("%.","-")
+	return output
 end
 
 return UUID
