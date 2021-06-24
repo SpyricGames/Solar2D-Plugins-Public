@@ -42,7 +42,17 @@
 		take at least some milliseconds or tens of milliseconds to
 		complete. This, paired with the device identifier and epoch time,
 		makes this UUID more unique than most UUID implementations for Lua.
-		
+	
+	--------------------------------------------------------------------
+	
+	Sample UUID:
+		266-1624567174-1922-28
+	
+		266 			= Anonymized identifier
+		1624567174		= Epoch time, seconds
+		1922			= Epoch time, milliseconds (available only via sockets)
+		28				= Time to execution
+	
 	--------------------------------------------------------------------
 	The only possible scenario where two identical UUIDs are created:
 	1)	Two devices start the app at the same exact time, down to a
