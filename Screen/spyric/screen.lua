@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.             Last Updated: 18 June 2021 --
+--  © 2020-2021 Spyric Games Ltd.             Last Updated: 24 June 2021 --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -64,7 +64,7 @@ end
 
 -- Automatically hide the Android navbar & iOS status bar on system events.
 local androidAPI
-if system.getInfo("platformName"):lower() == "android" then
+if system.getInfo("platform") == "android" then
     androidAPI = system.getInfo( "androidApiLevel" )
 end
 
