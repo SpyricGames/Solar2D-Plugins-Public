@@ -19,14 +19,11 @@
 	
 	Spyric Installation Identifier consists of three parts:
 
-	1) Platform identifier.
-		A single letter to identify the user's platform.
-		"a" = Android
-		"i" = iOS
-		"w" = Win32
-		"m" = MacOS
-		"h" = HTML5
-		"t" = tvOS
+	1) Anonymized identifier.
+		The first three numbers of the UUID are randomly generated based on
+		the user's deviceID (obtained via system.getInfo("deviceID"). The
+		first three characters of the deviceID are used as a seed for the
+		random generator, which then generates 3 numbers between 1 and 9.
 
 	2) Epoch (unix) time.
 		Retrieved using socket.gettime() (or os.time() for HTML5 builds).
@@ -43,16 +40,21 @@
 		more random UUID. Requiring any plugins, modules or libraries,
 		such as ad networks, Composer, Physics, JSON, etc. will each
 		take at least some milliseconds or tens of milliseconds to
-		complete. This, paired with epoch time, makes UUID more
-		unique than most UUID implementations for Lua.
+		complete. This, paired with the device identifier and epoch time,
+		makes this UUID more unique than most UUID implementations for Lua.
 		
 	--------------------------------------------------------------------
-	The only possible case where two users could have the same UUID is if
-	they started your application at the same time, down to a millisecond
-	(or down to a second if sockets aren't supported), and if the users
-	are running the app on the same platform, and had identical times to
-	execution. In other words, if properly set up, the probability of
-	having two UUIDs for your app collide/overlap is practically zero.
+	The only possible scenario where two identical UUIDs are created:
+	1)	Two devices start the app at the same exact time, down to a
+		millisecond on platforms/devices that support sockets, or down
+		to a second on platforms/devices that do not support sockets.
+	2)	The first three digits of these two aforementioned devices'
+		deviceIDs are identical, or happen to produce the same three
+		random numbers based on their random seed.
+	3)	And finally, both of these devices also take exactly the same
+		amount of time, down to a millisecond, between requiring this
+		UUID plugin and creating the UUID string.
+	In other words, the chances of UUIDs colliding are practically zero.
 	--------------------------------------------------------------------
 ]]
 
@@ -84,7 +86,13 @@ end
 
 -- Create a new UUID (string) and return it.
 function UUID.new()
-	t[1] = platform:sub(1,1)
+	local id, seed = system.getInfo( "deviceID" ):sub(1,3), ""
+	for i = 1, 3 do
+		seed = seed..string.byte(id:sub(i,i))
+	end
+	math.randomseed( tonumber(seed) )
+	
+	t[1] = math.random(9) .. math.random(9) .. math.random(9)
 	t[2] = socket and socket.gettime() or os.time()
 	t[3] = system.getTimer()*10 - startTime
 	local output = table.concat( t, "-" ):gsub("%.","-")
