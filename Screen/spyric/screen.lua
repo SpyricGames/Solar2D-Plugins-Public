@@ -16,6 +16,27 @@
 
 ---------------------------------------------------------------------------
 
+-- NB! On Android, the "immersiveSticky" mode is problematic. Even though
+-- all Android devices from 4.4 onwards support it, this doesn't mean that
+-- all devices actually use it. Many Android devices still use the physical
+-- navbar and you can't (at least currently) determine whether a device has
+-- a physical or a software navbar by just using the Solar2D API.
+
+-- While there are ways of finding out if the screen size has changed, none
+-- of them are particularly graceful. However, toggling the "immersiveSticky"
+-- mode should be completed within a fraction of a second in most cases. This
+-- means that if your app has a splash or a launch screen that is shown when
+-- your app launches, like your game or company's logo, then this will allow
+-- the plugin (and the Solar2D API) more than enough time to update.
+
+-- If you just require this plugin and, without waiting, begin to create
+-- display objects, then they will likely not be positioned correctly if
+-- you are positioning them based on the screen dimensions.
+
+-- These issues do not exist on any other platform.
+
+---------------------------------------------------------------------------
+
 local screen = {}
 screen.safe = {}
 
