@@ -42,6 +42,9 @@
 
 local loadsave = {}
 
+-- Optional: set to false to stop the plugin from reporting on errors.
+loadsave.reportErrors = true
+
 -- hash consists of [1]: pepper, [2]: the data being saved or loaded, and [3]: salt.
 local hash = {"a4f4bf1c15c61507254b2db0077120d8981d0e39ac03ec6dfcbd86caba5a7d16", "", ""}
 
@@ -70,7 +73,9 @@ local type = type
 
 function loadsave.setPepper( s )
     if type(s) ~= "string" then
-        print( "WARNING: bad argument #1 to 'setPepper' (string expected, got " .. type(s) .. ")." )
+        if loadsave.reportErrors then
+            print( "WARNING: bad argument #1 to 'setPepper' (string expected, got " .. type(s) .. ")." )
+        end
         return
     end
     hash[1] = digest(sha256, s)
@@ -83,7 +88,9 @@ local function writeToFile( filename, savedata, directory )
     local file, errorString = open(path, "w")
     
     if not file then
-        print( "WARNING: File error - " .. errorString )
+        if loadsave.reportErrors then
+            print( "WARNING: File error - " .. errorString )
+        end
         return false
     end
     file:write(savedata)
@@ -96,15 +103,21 @@ end
 function loadsave.save( data, filename, salt, directory )
     local typeData = type(data)
     if typeData ~= "table" and typeData ~= "string" then
-        print( "WARNING: bad argument #1 to 'save' (table or string expected, got " .. typeData .. ")." )
+        if loadsave.reportErrors then
+            print( "WARNING: bad argument #1 to 'save' (table or string expected, got " .. typeData .. ")." )
+        end
         return false
     end
     if type(filename) ~= "string" then
-        print( "WARNING: bad argument #2 to 'save' (string expected, got " .. type(filename) .. ")." )
+        if loadsave.reportErrors then
+            print( "WARNING: bad argument #2 to 'save' (string expected, got " .. type(filename) .. ")." )
+        end
         return false
     end
     if type(salt) ~= "string" then
-        print( "WARNING: bad argument #3 to 'save' (string expected, got " .. type(salt) .. ")." )
+        if loadsave.reportErrors then
+            print( "WARNING: bad argument #3 to 'save' (string expected, got " .. type(salt) .. ")." )
+        end
         return false
     end
     
@@ -120,7 +133,9 @@ function loadsave.save( data, filename, salt, directory )
     t[3] = b64(contents)
     
     if not t[3] then
-        print( "WARNING: Write error - argument #1 to 'save' is an empty string." )
+        if loadsave.reportErrors then
+            print( "WARNING: Write error - argument #1 to 'save' is an empty string." )
+        end
         return false
     end
     
@@ -140,7 +155,9 @@ local function readFromFile( filename, directory )
     local file, errorString = open(path, "r")
     
     if not file then
-        print( "WARNING: File error - " .. errorString )
+        if loadsave.reportErrors then
+            print( "WARNING: File error - " .. errorString )
+        end
     else
         local contents = file:read("*a")
         close(file)
@@ -165,11 +182,15 @@ end
 -- Load an encoded file, check for file tampering, and return the decoded string or table.
 function loadsave.load( filename, salt, directory )
     if type(filename) ~= "string" then
-        print( "WARNING: bad argument #1 to 'save' (string expected, got " .. type(filename) .. ")." )
+        if loadsave.reportErrors then
+            print( "WARNING: bad argument #1 to 'save' (string expected, got " .. type(filename) .. ")." )
+        end
         return false
     end
     if type(salt) ~= "string" then
-        print( "WARNING: bad argument #2 to 'save' (string expected, got " .. type(salt) .. ")." )
+        if loadsave.reportErrors then
+            print( "WARNING: bad argument #2 to 'save' (string expected, got " .. type(salt) .. ")." )
+        end
         return false
     end
     hash[3] = salt
