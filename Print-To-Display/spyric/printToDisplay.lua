@@ -53,9 +53,11 @@ local activeWhenHidden
 local container = nil
 local background = nil
 local output = nil
+local buttonGroup = nil
 local buttonScroll = nil
 local buttonToggle = nil
 local buttonClear = nil
+local buttonCustom = nil
 
 ----------------------------------------------
 -- Default visual parameters:
@@ -143,7 +145,7 @@ local function outputToConsole( ... )
 
     local log = display.newText({
         parent = output,
-        text = concat( printList, "\t" ),
+        text = concat( printList, "    " ),
         x = textX,
         y = currentY,
         width = textWidth,
@@ -232,8 +234,7 @@ local function controls( event )
         elseif event.target.id == "toggle" then
             local isVisible = not container.isVisible
             container.isVisible = isVisible
-            buttonScroll.isVisible = isVisible
-            buttonClear.isVisible = isVisible
+            buttonGroup.isVisible = isVisible
             
             if isVisible then
                 buttonToggle.x = buttonToggle.xFrom
@@ -250,7 +251,8 @@ local function controls( event )
                 end
             end
             
-        else -- Clear all text.
+        -- Clear all text.
+        elseif event.target.id == "clear" then
             background:removeEventListener( "touch", scroll )
             buttonScroll.on.isVisible = true
             buttonScroll.off.isVisible = false
@@ -262,6 +264,11 @@ local function controls( event )
             container:insert( output, true )
             currentY = style.paddingTop-style.height*0.5
             output.y = 0
+        
+        -- Handle custom button event.
+        else
+            event.target.listener()
+            
         end
     end
     return true
@@ -376,9 +383,13 @@ function printToDisplay.start(...)
             buttonToggle.toggle.xScale = -1
         end
         
+        -- Add all other buttons inside a single group to easily control them.
+        buttonGroup = display.newGroup()
+        
         -- Auto scroll button:
         ----------------------------
         buttonScroll = display.newGroup()
+        buttonGroup:insert( buttonScroll )
         buttonScroll.x, buttonScroll.y = buttonX, buttonToggle.y + buttonToggle.height + buttonPadding
         buttonScroll.alpha = alpha
         buttonScroll:addEventListener( "touch", controls )
@@ -409,6 +420,7 @@ function printToDisplay.start(...)
         -- Clear button:
         ----------------------------
         buttonClear = display.newGroup()
+        buttonGroup:insert( buttonClear )
         buttonClear.x, buttonClear.y = buttonX, buttonScroll.y + buttonScroll.height + buttonPadding
         buttonClear.alpha = alpha
         buttonClear:addEventListener( "touch", controls )
@@ -436,14 +448,47 @@ function printToDisplay.start(...)
         )
         clear.fill = buttonIconColor
         
+        
+        -- Custom buttons (optional):
+        ----------------------------
+        local currentY = buttonClear.y + buttonClear.height + buttonPadding
+        
+        local customParams = customStyle.customButton
+        if type( customParams ) == "table" then
+            buttonCustom = {}
+            
+            for i = 1, #customParams do
+                if type(customParams[i].listener) ~= "function" then
+                    print( "WARNING: invalid customButton listener to 'start' (function expected, got " .. type(customParams[i].listener) .. ")" )
+                else
+                    local button = display.newGroup()
+                    buttonGroup:insert( button )
+                    button.x, button.y = buttonX, currentY
+                    button.alpha = alpha
+                    button:addEventListener( "touch", controls )
+                    button.id = "custom"
+                    
+                    button.bg = display.newRoundedRect( button, 0, 0, buttonSize, buttonSize, buttonRounding )
+                    button.bg.fill = buttonBaseColor
+                    
+                    button.text = display.newText( button, customParams[i].id or "?", 0, 0, customParams[i].font or font, customParams[i].fontSize or fontSize )
+                    button.text.fill = buttonIconColor
+                    
+                    currentY = button.y + button.height + buttonPadding
+                    button.listener = customParams[i].listener
+                    
+                    buttonCustom[#buttonCustom+1] = button
+                end
+            end
+        end        
+        
         ----------------------------
 
         local parent = customStyle.parent
         if parent then
             parent:insert( container )
-            parent:insert( buttonScroll )
+            parent:insert( buttonGroup )
             parent:insert( buttonToggle )
-            parent:insert( buttonClear )
         end
         
         consolePrint(true)
@@ -462,11 +507,10 @@ function printToDisplay.remove()
         container = nil
         output = nil
         background = nil
-        display.remove( buttonScroll )
-        buttonScroll = nil
         display.remove( buttonToggle )
         buttonToggle = nil
-        display.remove( buttonClear )
+        display.remove( buttonGroup )
+        buttonScroll = nil
         buttonClear = nil
         
         consolePrint()
