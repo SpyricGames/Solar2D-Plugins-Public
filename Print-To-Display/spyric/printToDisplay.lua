@@ -510,6 +510,7 @@ function printToDisplay.remove()
         display.remove( buttonToggle )
         buttonToggle = nil
         display.remove( buttonGroup )
+        buttonGroup = nil
         buttonScroll = nil
         buttonClear = nil
         
