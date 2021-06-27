@@ -59,7 +59,7 @@ function morph.addBody( ... )
 	local t = { ... }
 
 	if type( t[1] ) ~= "table" then
-		print( "ERROR: bad argument #1 to 'spyricMorph.addBody' (table expected, got " .. type( object ) .. ")." )
+		print( "ERROR: bad argument #1 to 'addBody' (table expected, got " .. type( object ) .. ")." )
 		return
 	end
 
