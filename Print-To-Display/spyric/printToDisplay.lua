@@ -45,6 +45,9 @@ local textX = 0
 local textWidth = 0
 local paddingRow = 0
 local fontSize = 0
+local textColor
+local textColorError
+local textColorWarning
 local font
 local useHighlighting
 local activeWhenHidden
