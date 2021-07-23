@@ -29,6 +29,7 @@ local printToDisplay = {}
 local _print = print
 local concat = table.concat
 local find = string.find
+local gsub = string.gsub
 local sub = string.sub
 local tostring = tostring
 local type = type
@@ -148,7 +149,7 @@ local function outputToConsole( ... )
 
     local log = display.newText({
         parent = output,
-        text = concat( printList, "    " ),
+        text = gsub( concat( printList, "    " ), "\t", "    " ),
         x = textX,
         y = currentY,
         width = textWidth,
