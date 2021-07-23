@@ -280,7 +280,7 @@ end
 
 -- Create the in-app console and start sending print() to the in-app console as well.
 function printToDisplay.start(...)
-    if console then
+    if container then
         print( "\nSpyric Print to Display: console has already started.\n" )
     else
         local t = {...}
@@ -504,7 +504,7 @@ end
 
 -- Remove the in-app console and restore normal print() functionality.
 function printToDisplay.remove()
-    if console then
+    if container then
         print( "\nSpyric Print to Display: console isn't running.\n" )
     else
         display.remove( container )
