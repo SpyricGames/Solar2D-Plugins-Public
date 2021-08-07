@@ -16,6 +16,9 @@ local demoScene = require( "demoScene.ui" ).create( "Spyric Loadsave", true )
 
 -- Require Spyric Loadsave.
 local loadsave = require( "spyric.loadsave" )
+-- Optionally enable verbose debug prints for the plugin.
+loadsave.debugMode( true )
+
 -- Optional: set custom pepper - https://en.wikipedia.org/wiki/Pepper_(cryptography)
 loadsave.setPepper( "some secret text" )
 
@@ -38,8 +41,16 @@ print( "Data saved:", success )
 
 -- Load the table from the file:
 local data = loadsave.load( "myData.json", "abc" )
-print( "data:", data )
-
+-- Show the data table contents upon a successful load.
+if data then
+	print( "Decoded data = {" )
+	for i, v in pairs( data ) do
+		print( "\t[\"" .. i .. "\"] = " .. v .. "," )
+	end
+	print( "}" )
+else
+	print( "Failed to load data." )
+end
 
 ------------------------------------------------
 
@@ -57,7 +68,7 @@ print( "Message saved:", success )
 
 -- Load the string from the file:
 local decodedMessage = loadsave.load( "myString.txt", "abc" )
-print( "decodedMessage:", decodedMessage )
+print( "decodedMessage =", decodedMessage )
 
 
 ------------------------------------------------
