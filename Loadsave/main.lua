@@ -16,8 +16,14 @@ local demoScene = require( "demoScene.ui" ).create( "Spyric Loadsave", true )
 
 -- Require Spyric Loadsave.
 local loadsave = require( "spyric.loadsave" )
--- Optionally enable verbose debug prints for the plugin.
+
+-- Optionally enable verbose debug prints for the plugin (default is false).
 loadsave.debugMode( true )
+
+-- Optionally disable data protection for the files in order to make the files
+-- human-readable  (default is true). Not that you cannot load protected data
+-- if the setting is off and vice versa. This could be useful during development.
+loadsave.protectData( true )
 
 -- Optional: set custom pepper - https://en.wikipedia.org/wiki/Pepper_(cryptography)
 loadsave.setPepper( "some secret text" )
