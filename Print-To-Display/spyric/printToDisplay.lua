@@ -19,7 +19,7 @@
 -- Important! Important! Important! Important! Important! Important! Important!
 --==============================================================================
 -- If you want to make changes to this module and you need to use debug prints,
--- then make sure to use _print() inside of these functions because using the 
+-- then make sure to use _print() inside of these functions because using the
 -- regular print() inside the wrong function will result in an infinite loop.
 --==============================================================================
 
@@ -28,9 +28,11 @@ local printToDisplay = {}
 -- Localised functions.
 local _print = print
 local concat = table.concat
+local match = string.match
 local find = string.find
 local gsub = string.gsub
 local sub = string.sub
+local len = string.len
 local tostring = tostring
 local type = type
 
@@ -147,66 +149,73 @@ local function outputToConsole( ... )
         printList[i] = tostring( arg[i] )
     end
 
-    local log = display.newText({
-        parent = output,
-        text = gsub( concat( printList, "    " ), "\t", "    " ),
-        x = textX,
-        y = currentY,
-        width = textWidth,
-        align = "left",
-        height = 0,
-        font = font,
-        fontSize = fontSize
-    })
-    
-    -- Especially on mobile devices, if the user tries to print massive strings,
-    -- such sending a network request to a page and then trying to print out the
-    -- entire event.response, then the device may run out of texture memory.
-    if log.width >= maxTextureSize or log.height >= maxTextureSize then
-        display.remove(log)
-        log = display.newText({
-            parent = output,
-            text = "WARNING: message is too long to print:\n\n" .. sub(log.text,1,32) .. "...",
-            x = textX,
-            y = currentY,
-            width = textWidth,
-            align = "left",
-            height = 0,
-            font = font,
-            fontSize = fontSize
-        })
-    end
-    log.anchorX, log.anchorY = 0, 0
-    currentY = log.y + log.height + paddingRow
-    
+    -- Break the console outputs to separate lines to prevent running out of texture memory.
+    local tempString, paragraph, finalParagraph = gsub( concat( printList, "    " ), "\t", "    " ), "", ""
+    local singleParagraph = not find( tempString, "([^\n]*)\n(.*)" )
+    repeat
+        -- If there is only a single paragraph, then there will be no looping.
+        if singleParagraph then
+            paragraph, tempString = tempString or "", nil
+        else
+            paragraph, tempString = match( tempString, "([^\n]*)\n(.*)" )
+            -- During the final loop, there's a chance that match will not return a paragraph
+            -- even though there would be one more to go. For these cases, we'll store the last
+            -- tempString and use it as the finalParagraph if one can't be found via match.
+            if tempString then
+                finalParagraph = tempString
+            end
+            if not paragraph then
+                paragraph = finalParagraph
+            end
+        end
+
+        if paragraph then
+            local log = display.newText({
+                parent = output,
+                text = paragraph,
+                x = textX,
+                y = currentY,
+                width = textWidth,
+                align = "left",
+                height = 0,
+                font = font,
+                fontSize = fontSize
+            })
+
+            log.anchorX, log.anchorY = 0, 0
+            currentY = log.y + log.height + paddingRow
+
+            if useHighlighting then
+                if find( log.text, "ERROR:" ) == 1 then
+                    log.fill = textColorError
+                elseif find( log.text, "WARNING:" ) == 1 then
+                    log.fill = textColorWarning
+                else
+                    log.fill = textColor
+                end
+            else
+                log.fill = textColor
+            end
+
+            local newY = log.y + log.height
+            if not canScroll and newY >= scrollThreshold then
+                background:addEventListener( "touch", scroll )
+                canScroll = true
+            end
+
+            if canScroll then
+                maxY = newY - scrollThreshold
+                if autoscroll then
+                    output.y = -maxY
+                end
+            end
+        end
+
+    until tempString == nil or len( tempString ) == 0
+
     -- Reduce, reuse and recycle.
     for i = 1, arg.n do
         printList[i] = nil
-    end
-
-    if useHighlighting then
-        if find( log.text, "ERROR:" ) == 1 then
-            log.fill = textColorError
-        elseif find( log.text, "WARNING:" ) == 1 then
-            log.fill = textColorWarning
-        else
-            log.fill = textColor
-        end
-    else
-        log.fill = textColor
-    end
-
-    local newY = log.y + log.height
-    if not canScroll and newY >= scrollThreshold then
-        background:addEventListener( "touch", scroll )
-        canScroll = true
-    end
-    
-    if canScroll then
-        maxY = newY - scrollThreshold
-        if autoscroll then
-            output.y = -maxY
-        end
     end
 end
 
@@ -233,20 +242,20 @@ local function controls( event )
             buttonScroll.on.isVisible = not buttonScroll.on.isVisible
             buttonScroll.off.isVisible = not buttonScroll.off.isVisible
             if autoscroll then output.y = -maxY end
-        
+
         -- Toggle the console's visibility (and activity).
         elseif event.target.id == "toggle" then
             local isVisible = not container.isVisible
             container.isVisible = isVisible
             buttonGroup.isVisible = isVisible
-            
+
             if isVisible then
                 buttonToggle.x = buttonToggle.xFrom
             else
                 buttonToggle.x = buttonToggle.xTo
             end
             buttonToggle.xScale = buttonToggle.xScale*-1
-            
+
             if not activeWhenHidden then
                 if isVisible then
                     consolePrint(true)
@@ -254,7 +263,7 @@ local function controls( event )
                     consolePrint()
                 end
             end
-            
+
         -- Clear all text.
         elseif event.target.id == "clear" then
             background:removeEventListener( "touch", scroll )
@@ -262,17 +271,17 @@ local function controls( event )
             buttonScroll.off.isVisible = false
             canScroll = false
             autoscroll = true
-            
+
             display.remove( output )
             output = display.newGroup()
             container:insert( output, true )
             currentY = style.paddingTop-style.height*0.5
             output.y = 0
-        
+
         -- Handle custom button event.
         else
             event.target.listener()
-            
+
         end
     end
     return true
@@ -286,12 +295,12 @@ function printToDisplay.start(...)
         local t = {...}
         local startVisible = type(t[1]) ~= "boolean" or t[1]
         local customStyle = type(t[#t]) == "table" and t[#t] or {}
-        
+
         -- Update style with user input.
         for i, v in pairs( customStyle ) do
             style[i] = v
         end
-        
+
         -- Localise style properties.
         local x = style.x
         local y = style.y
@@ -309,7 +318,7 @@ function printToDisplay.start(...)
         local paddingBottom = style.paddingBottom
         local paddingLeft = style.paddingLeft
         local paddingRight = style.paddingRight
-        
+
         -- Assign initial console properties (localised for speed).
         scrollThreshold = (height-(paddingTop+paddingBottom))*0.5
         currentY = paddingTop-height*0.5
@@ -326,17 +335,17 @@ function printToDisplay.start(...)
         blockTouch = style.blockTouch
         autoscroll = true
         canScroll = false
-        
+
         -- Create the console's container.
         container = display.newContainer( width, height )
         container.anchorX, container.anchorY = anchorX, anchorY
         container.x, container.y = x, y
         container.alpha = alpha
-        
+
         -- Create the console's background.
         background = display.newRect( container, 0, 0, width, height )
         background.fill = style.bgColor
-        
+
         -- Create the console output group.
         output = display.newGroup()
         container:insert( output, true )
@@ -360,10 +369,10 @@ function printToDisplay.start(...)
         buttonToggle.alpha = alpha
         buttonToggle:addEventListener( "touch", controls )
         buttonToggle.id = "toggle"
-        
+
         buttonToggle.bg = display.newRoundedRect( buttonToggle, 0, 0, buttonSize, buttonSize, buttonRounding )
         buttonToggle.bg.fill = buttonBaseColor
-        
+
         -- Toggle icon.
         buttonToggle.toggle = display.newPolygon( buttonToggle, 0, 0,
             {
@@ -376,7 +385,7 @@ function printToDisplay.start(...)
             }
         )
         buttonToggle.toggle.fill = buttonIconColor
-        
+
         -- Coordinates to move the toggle button to/from when toggling the console visibility.
         buttonToggle.xFrom = buttonX
         if style.buttonPos == "left" then
@@ -386,10 +395,10 @@ function printToDisplay.start(...)
             buttonToggle.xTo = buttonX - container.width
             buttonToggle.toggle.xScale = -1
         end
-        
+
         -- Add all other buttons inside a single group to easily control them.
         buttonGroup = display.newGroup()
-        
+
         -- Auto scroll button:
         ----------------------------
         buttonScroll = display.newGroup()
@@ -401,7 +410,7 @@ function printToDisplay.start(...)
 
         buttonScroll.bg = display.newRoundedRect( buttonScroll, 0, 0, buttonSize, buttonSize, buttonRounding )
         buttonScroll.bg.fill = buttonBaseColor
-        
+
         -- Play icon.
         buttonScroll.on = display.newPolygon( buttonScroll, 0, 0,
             {
@@ -411,7 +420,7 @@ function printToDisplay.start(...)
             }
         )
         buttonScroll.on.fill = buttonIconColor
-        
+
         -- Pause icon.
         buttonScroll.off = display.newGroup()
         buttonScroll:insert( buttonScroll.off )
@@ -420,7 +429,7 @@ function printToDisplay.start(...)
         pauseLeft.fill = buttonIconColor
         local pauseRight = display.newRect( buttonScroll.off, SEG, 0, SEG, HW+SEG )
         pauseRight.fill = buttonIconColor
-        
+
         -- Clear button:
         ----------------------------
         buttonClear = display.newGroup()
@@ -429,10 +438,10 @@ function printToDisplay.start(...)
         buttonClear.alpha = alpha
         buttonClear:addEventListener( "touch", controls )
         buttonClear.id = "clear"
-        
+
         buttonClear.bg = display.newRoundedRect( buttonClear, 0, 0, buttonSize, buttonSize, buttonRounding )
         buttonClear.bg.fill = buttonBaseColor
-        
+
         -- Clear icon.
         local clear = display.newPolygon( buttonClear, 0, 0,
             {
@@ -451,16 +460,16 @@ function printToDisplay.start(...)
             }
         )
         clear.fill = buttonIconColor
-        
-        
+
+
         -- Custom buttons (optional):
         ----------------------------
         local currentY = buttonClear.y + buttonClear.height + buttonPadding
-        
+
         local customParams = customStyle.customButton
         if type( customParams ) == "table" then
             buttonCustom = {}
-            
+
             for i = 1, #customParams do
                 if type(customParams[i].listener) ~= "function" then
                     print( "WARNING: invalid customButton listener to 'start' (function expected, got " .. type(customParams[i].listener) .. ")" )
@@ -471,21 +480,21 @@ function printToDisplay.start(...)
                     button.alpha = alpha
                     button:addEventListener( "touch", controls )
                     button.id = "custom"
-                    
+
                     button.bg = display.newRoundedRect( button, 0, 0, buttonSize, buttonSize, buttonRounding )
                     button.bg.fill = buttonBaseColor
-                    
+
                     button.text = display.newText( button, customParams[i].id or "?", 0, 0, customParams[i].font or font, customParams[i].fontSize or fontSize )
                     button.text.fill = buttonIconColor
-                    
+
                     currentY = button.y + button.height + buttonPadding
                     button.listener = customParams[i].listener
-                    
+
                     buttonCustom[#buttonCustom+1] = button
                 end
             end
-        end        
-        
+        end
+
         ----------------------------
 
         local parent = customStyle.parent
@@ -494,7 +503,7 @@ function printToDisplay.start(...)
             parent:insert( buttonGroup )
             parent:insert( buttonToggle )
         end
-        
+
         consolePrint(true)
         if not startVisible then
             controls( {phase="began",target={id="toggle"}} )
@@ -517,7 +526,7 @@ function printToDisplay.remove()
         buttonGroup = nil
         buttonScroll = nil
         buttonClear = nil
-        
+
         consolePrint()
     end
 end

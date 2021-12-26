@@ -24,6 +24,18 @@ printToDisplay.start({
     height = display.maxY - display.minY,
 	y = display.minY,
     alpha=0.9,
+
+    -- Create a single custom button, just to show how it's done.
+    customButton = {
+        {
+            listener = function()
+                -- You could run some ad, analytics, debugging tests here, etc.
+                print( "You pressed the custom \"star\"-button!\nYou can add all types of custom buttons with their custom functionality to the in-app console."  )
+            end,
+            fontSize = 24,
+            id = "⭐"
+        },
+    }
 })
 
 -----------------------------------------------------------------------
@@ -34,16 +46,18 @@ print("")
 
 -- Add simple one sentence explanations for what the in-app console buttons do.
 local labelX = display.screenOriginX+display.actualContentWidth/3+40
-local toggleText = display.newText( "❮  Hide/show the console", labelX, 95, "demoScene/font/Roboto-Regular.ttf", 20 )
+local toggleText = display.newText( "❮  Hide/show the console", labelX, display.screenOriginY+95, "demoScene/font/Roboto-Regular.ttf", 20 )
 toggleText.anchorX = 0
-local resumeText = display.newText( "❮  Pause/Resume autoscroll", labelX, 137, "demoScene/font/Roboto-Regular.ttf", 20 )
+local resumeText = display.newText( "❮  Pause/Resume autoscroll", labelX, display.screenOriginY+137, "demoScene/font/Roboto-Regular.ttf", 20 )
 resumeText.anchorX = 0
-local clearText = display.newText( "❮  Clear all outputs", labelX, 179, "demoScene/font/Roboto-Regular.ttf", 20 )
+local clearText = display.newText( "❮  Clear all outputs", labelX, display.screenOriginY+179, "demoScene/font/Roboto-Regular.ttf", 20 )
+clearText.anchorX = 0
+local clearText = display.newText( "❮  Run a custom user-defined function.", labelX, display.screenOriginY+223, "demoScene/font/Roboto-Regular.ttf", 20 )
 clearText.anchorX = 0
 
 local description = display.newText(
     "With Spyric Print To Display plugin, whenever you use the print() function, " ..
-    "the output will be sent to the simulator console and to an in-app console.\n\n" .. 
+    "the output will be sent to the simulator console and to an in-app console.\n\n" ..
     "Having an in-app console allows you to easily debug your apps on your devices during testing.",
     500, 280, 440, 0, "demoScene/font/Roboto-Regular.ttf", 20
 )
