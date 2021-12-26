@@ -52,8 +52,8 @@ local resumeText = display.newText( "❮  Pause/Resume autoscroll", labelX, disp
 resumeText.anchorX = 0
 local clearText = display.newText( "❮  Clear all outputs", labelX, display.screenOriginY+179, "demoScene/font/Roboto-Regular.ttf", 20 )
 clearText.anchorX = 0
-local clearText = display.newText( "❮  Run a custom user-defined function.", labelX, display.screenOriginY+223, "demoScene/font/Roboto-Regular.ttf", 20 )
-clearText.anchorX = 0
+local userFunction = display.newText( "❮  Run a custom user-defined function.", labelX, display.screenOriginY+223, "demoScene/font/Roboto-Regular.ttf", 20 )
+userFunction.anchorX = 0
 
 local description = display.newText(
     "With Spyric Print To Display plugin, whenever you use the print() function, " ..
