@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.            Last Updated: 20 June 2021  --
+--  © 2020-2021 Spyric Games Ltd.        Last Updated: 29 December 2021  --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -37,7 +37,6 @@ local tostring = tostring
 local type = type
 
 -- Localised console variables.
-local maxTextureSize = system.getInfo( "maxTextureSize" ) or 1024
 local blockTouch = true
 local autoscroll = true
 local canScroll = false
