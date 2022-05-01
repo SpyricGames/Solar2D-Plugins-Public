@@ -158,6 +158,7 @@ local function unhandledError( event )
     if errorHandling.output then
         print( "" )
         print( "ERROR: " .. event.errorMessage )
+        print( event.stackTrace )
         print( "" )
     end
     return errorHandling.suppress
