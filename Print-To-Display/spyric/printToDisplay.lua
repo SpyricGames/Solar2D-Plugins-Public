@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.        Last Updated: 29 December 2021  --
+--  © 2020-2022 Spyric Games Ltd.              Last Updated: 1 May 2022  --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -64,6 +64,10 @@ local buttonToggle = nil
 local buttonClear = nil
 local buttonCustom = nil
 
+-- Print console controls.
+local controls 
+local errorHandling = {}
+
 ----------------------------------------------
 -- Default visual parameters:
 ----------------------------------------------
@@ -112,35 +116,53 @@ local function scroll( event )
         display.getCurrentStage():setFocus( event.target )
         event.target.isTouched = true
         objectStart, eventStart = output.y, event.y
-    elseif event.phase == "moved" then
-        if event.target.isTouched then
+    elseif event.target.isTouched then
+        if event.phase == "moved" then
             local d = event.y - eventStart
             local toY = objectStart + d
+            
             if toY <= 0 and toY >= -maxY then
-                autoscroll = false
-                buttonScroll.on.isVisible = false
-                buttonScroll.off.isVisible = true
                 output.y = toY
             else
                 objectStart = output.y
                 eventStart = event.y
-                if toY <= 0 then
+            end
+            
+            -- Turn autoscroll on when near enough to the bottom.
+            if output.y + maxY < 10 then
+                if not autoscroll then
                     autoscroll = true
                     buttonScroll.on.isVisible = true
                     buttonScroll.off.isVisible = false
                 end
+            else
+                if autoscroll then
+                    autoscroll = false
+                    buttonScroll.on.isVisible = false
+                    buttonScroll.off.isVisible = true
+                end
             end
+        else
+            display.getCurrentStage():setFocus( nil )
+            event.target.isTouched = false
         end
-    else
-        display.getCurrentStage():setFocus( nil )
-        event.target.isTouched = false
     end
     return blockTouch
 end
 
-local function printUnhandledError( event )
-    print( event.errorMessage )
+
+local function unhandledError( event )
+    if errorHandling.open and not container.isVisible then
+        controls( {phase="began",target={id="toggle"}} )
+    end
+    if errorHandling.output then
+        print( "" )
+        print( "ERROR: " .. event.errorMessage )
+        print( "" )
+    end
+    return errorHandling.suppress
 end
+
 
 -- Output a print to the in-app console.
 local function outputToConsole( ... )
@@ -225,15 +247,13 @@ local function consolePrint( start )
             outputToConsole( ... )
             _print( ... )
         end
-        Runtime:addEventListener( "unhandledError", printUnhandledError )
     else
         print = _print -- Restore the normal global print function.
-        Runtime:removeEventListener( "unhandledError", printUnhandledError )
     end
 end
 
 -- Button event listener.
-local function controls( event )
+function controls( event )
     if event.phase == "began" then
         -- Toggle auto scroll on or off.
         if event.target.id == "autoscroll" then
@@ -244,19 +264,19 @@ local function controls( event )
 
         -- Toggle the console's visibility (and activity).
         elseif event.target.id == "toggle" then
-            local isVisible = not container.isVisible
-            container.isVisible = isVisible
-            buttonGroup.isVisible = isVisible
+            local makeVisible = not container.isVisible
+            container.isVisible = makeVisible
+            buttonGroup.isVisible = makeVisible
 
-            if isVisible then
+            if makeVisible then
                 buttonToggle.x = buttonToggle.xFrom
             else
                 buttonToggle.x = buttonToggle.xTo
             end
             buttonToggle.xScale = buttonToggle.xScale*-1
-
+            
             if not activeWhenHidden then
-                if isVisible then
+                if makeVisible then
                     consolePrint(true)
                 else
                     consolePrint()
@@ -295,10 +315,15 @@ function printToDisplay.start(...)
         local startVisible = type(t[1]) ~= "boolean" or t[1]
         local customStyle = type(t[#t]) == "table" and t[#t] or {}
 
+        -- Use customStyle table to pass along configurations for
+        -- whether or not, and how to use unhandledError listener.
+        errorHandling.activate = type( customStyle.errorHandling ) == "table"
+
         -- Update style with user input.
         for i, v in pairs( customStyle ) do
             style[i] = v
         end
+        style.errorHandling = nil
 
         -- Localise style properties.
         local x = style.x
@@ -507,6 +532,15 @@ function printToDisplay.start(...)
         if not startVisible then
             controls( {phase="began",target={id="toggle"}} )
         end
+        
+        if errorHandling.activate then
+            -- [suppress] defaults to false. [output] and [open] default to true.
+            errorHandling.suppress = type( customStyle.errorHandling.suppress ) == "boolean" and customStyle.errorHandling.suppress
+            errorHandling.output = type( customStyle.errorHandling.output ) ~= "boolean" or customStyle.errorHandling.output
+            errorHandling.open = type( customStyle.errorHandling.open ) ~= "boolean" or customStyle.errorHandling.open
+            
+            Runtime:addEventListener( "unhandledError", unhandledError )
+        end
     end
 end
 
@@ -525,6 +559,11 @@ function printToDisplay.remove()
         buttonGroup = nil
         buttonScroll = nil
         buttonClear = nil
+        
+        if errorHandling.activate then
+            errorHandling.activate = false
+            Runtime:removeEventListener( "unhandledError", unhandledError )
+        end
 
         consolePrint()
     end
