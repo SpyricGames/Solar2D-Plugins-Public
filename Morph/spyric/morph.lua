@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.             Last Updated: 22 May 2021  --
+--  © 2020-2022 Spyric Games Ltd.             Last Updated: 4 June 2022  --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -21,7 +21,6 @@ local type = type
 local unpack = unpack
 local min = math.min
 local max = math.max
-local sort = table.sort
 local addBody = physics.addBody
 local removeBody = physics.removeBody
 
@@ -59,7 +58,7 @@ function morph.addBody( ... )
 	local t = { ... }
 
 	if type( t[1] ) ~= "table" then
-		print( "ERROR: bad argument #1 to 'addBody' (table expected, got " .. type( object ) .. ")." )
+		print( "ERROR: bad argument #1 to 'addBody' (table expected, got " .. type( t[1] ) .. ")." )
 		return
 	end
 
@@ -76,7 +75,7 @@ function morph.addBody( ... )
 	else
 		object.morphData.bodyType = "dynamic"
 	end
-	
+
 	-- Add all inputted bodies and their entries to the morph tables.
 	local n = 1
 	for bodyCount = 2+offset, #t do
