@@ -59,7 +59,7 @@ local function createUI()
     safe_tooltip.anchorX, safe_tooltip.anchorY = 0, 0
     safe_tooltip.fill = safe_fill
     
-    local safe_minY = display.newLine( group, screen.safe.minX, screen.minY, screen.safe.maxX, screen.safe.minY )
+    local safe_minY = display.newLine( group, screen.safe.minX, screen.safe.minY, screen.safe.maxX, screen.safe.minY )
     safe_minY.strokeWidth = safe_width
     safe_minY.stroke = safe_fill
     
