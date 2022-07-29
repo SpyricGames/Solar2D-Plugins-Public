@@ -31,7 +31,6 @@ local concat = table.concat
 local match = string.match
 local find = string.find
 local gsub = string.gsub
-local sub = string.sub
 local len = string.len
 local tostring = tostring
 local type = type
@@ -275,7 +274,7 @@ function controls( event )
                 buttonToggle.x = buttonToggle.xTo
             end
             buttonToggle.xScale = buttonToggle.xScale*-1
-            
+
             if not activeWhenHidden then
                 if makeVisible then
                     consolePrint(true)
@@ -489,7 +488,7 @@ function printToDisplay.start(...)
 
         -- Custom buttons (optional):
         ----------------------------
-        local currentY = buttonClear.y + buttonClear.height + buttonPadding
+        local lastY = buttonClear.y + buttonClear.height + buttonPadding
 
         local customParams = customStyle.customButton
         if type( customParams ) == "table" then
@@ -501,7 +500,7 @@ function printToDisplay.start(...)
                 else
                     local button = display.newGroup()
                     buttonGroup:insert( button )
-                    button.x, button.y = buttonX, currentY
+                    button.x, button.y = buttonX, lastY
                     button.alpha = alpha
                     button:addEventListener( "touch", controls )
                     button.id = "custom"
@@ -512,7 +511,7 @@ function printToDisplay.start(...)
                     button.text = display.newText( button, customParams[i].id or "?", 0, 0, customParams[i].font or font, customParams[i].fontSize or fontSize )
                     button.text.fill = buttonIconColor
 
-                    currentY = button.y + button.height + buttonPadding
+                    lastY = button.y + button.height + buttonPadding
                     button.listener = customParams[i].listener
 
                     buttonCustom[#buttonCustom+1] = button
@@ -533,13 +532,13 @@ function printToDisplay.start(...)
         if not startVisible then
             controls( {phase="began",target={id="toggle"}} )
         end
-        
+
         if errorHandling.activate then
             -- [suppress] defaults to false. [output] and [open] default to true.
             errorHandling.suppress = type( customStyle.errorHandling.suppress ) == "boolean" and customStyle.errorHandling.suppress
             errorHandling.output = type( customStyle.errorHandling.output ) ~= "boolean" or customStyle.errorHandling.output
             errorHandling.open = type( customStyle.errorHandling.open ) ~= "boolean" or customStyle.errorHandling.open
-            
+
             Runtime:addEventListener( "unhandledError", unhandledError )
         end
     end
