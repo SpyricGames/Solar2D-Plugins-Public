@@ -24,13 +24,13 @@
 	2) Time to execution:
 		How many milliseconds have passed between when this module was
 		first required and when the UUID is generated.
-			
+
 	3) Frame time (optional):
 		How many milliseconds it took for Solar2D to get to the next
 		frame since requiring this module. Frame time is only available
 		if there was at least 1 frame of delay between requiring this
 		module and in creating the UUID.
-	
+
 	--------------------------------------------------------------------
 
 		NB! For the best possible result, you should require this UUID
@@ -39,7 +39,7 @@
 		more random UUID. Requiring any plugins, modules or libraries,
 		such as ad networks, Composer, Physics, etc. will each take at
 		least some milliseconds or tens of milliseconds to complete.
-	
+
 	--------------------------------------------------------------------
 ]]
 
@@ -84,24 +84,24 @@ function UUID.new( hash )
 		system.getTimer()*10 - startTime,
 		frameTime
 	}
-	
+
 	local output = table.concat( t, "-" ):gsub("%.","-")
-	
+
 	if type(hash) == "string" then
 		local cleanup = not _G.package.loaded["crypto"]
 		local crypto = require( "crypto" )
-		
+
 		if not crypto[hash] then
 			print( "WARNING: crypto.digest() unknown message digest algorithm. UUID not hashed." )
 		else
 			output = crypto.digest( crypto[hash], output )
 		end
-		
+
 		if cleanup then
 			_G.package.loaded["crypto"] = nil
 		end
 	end
-	
+
 	return output
 end
 
