@@ -21,6 +21,8 @@ local performance = require( "spyric.performance" )
 -- Start the performance meter & adjust its position later.
 ------------------------------------------------------------
 performance.start()
+-- By default, the performance meter will be horizontally centered at the top of the screen,
+-- but you may optionally reposition it or insert into a specific display group, etc.
 performance.meter.x = display.contentCenterX
 performance.meter.y = display.minY + 20
 
@@ -44,17 +46,26 @@ performance.meter.y = display.minY + 20
 
 ------------------------------------------------------------
 
+-- Create group hierarchy to ensure the tooltip is always on top.
+local group = display.newGroup()
+local groupText = display.newGroup()
+group:insert( groupText )
 
 local tooltip = display.newText({
-	text = "▲\nTap the meter to hide/reveal it.",
+	parent = group,
+	text = "▲\nTap the meter to hide/reveal it.\nThe values are 1) FPS, 2) texture memory use, 3) Lua memory use (in that order).",
 	x = performance.meter.x,
-	y = performance.meter.y + 40,
+	y = performance.meter.y + 50,
 	font = "demoScene/font/Roboto-Black.ttf",
 	fontSize = 20,
 	align = "center",
 })
+tooltip.anchorY = 0
 tooltip:setFillColor( 252/255, 186/255, 4/255 )
 
+local tooltipBG = display.newRect( group, tooltip.x, tooltip.y + tooltip.height*0.5, tooltip.width+10, tooltip.height+10 )
+tooltipBG:setFillColor( 0, 0, 0, 0.75 )
+tooltip:toFront()
 
 -- Create a simple loop for adding and removing display objects to demonstrate the plugin.
 local loopStart
@@ -63,7 +74,7 @@ local iterations = 50
 local delay = 50
 
 local function add()
-	t[#t+1] = display.newText( "Hello!", math.random( 120, display.actualContentWidth-120), math.random(200, display.actualContentHeight-140), "demoScene/font/Roboto-Black.ttf", math.random(30,120) )
+	t[#t+1] = display.newText( groupText, "Hello!", math.random( 120, display.actualContentWidth-120), math.random(200, display.actualContentHeight-140), "demoScene/font/Roboto-Black.ttf", math.random(30,120) )
 end
 
 local function remove()
@@ -78,7 +89,7 @@ function loopStart()
     timer.performWithDelay( delay, add, iterations )
 
     timer.performWithDelay( delay*iterations+25, function()
-    	timer.performWithDelay( delay, remove, iterations )
+		timer.performWithDelay( delay, remove, iterations )
     end )
 end
 

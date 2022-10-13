@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.            Last Updated: 24 June 2021  --
+--  © 2020-2022 Spyric Games Ltd.         Last Updated: 13 October 2022  --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -35,8 +35,8 @@ local style = {
 }
 ----------------------------------------------
 
--- If you need to move the performance meter UI element later
--- via code, you can do so via the performance.meter variable.
+-- If you need to access the performance meter UI in your
+-- scenes, you can do so via the performance.meter property.
 performance.meter = nil
 local counter = nil
 local bg = nil
@@ -46,7 +46,6 @@ local getTimer = system.getTimer
 local getInfo = system.getInfo
 local format = string.format
 local floor = math.floor
-local tostring = tostring
 local cg = collectgarbage
 
 -- Constant is multiplied by 100 to allow for the use of floor() later on.
@@ -71,22 +70,22 @@ local function updateMeter()
     local curFPS = floor( 1000 / (curTime - prevTime))
     frameCount = frameCount+1
     FPS[frameCount] = curFPS
-    
+
     -- Run garbage collection and update text every frame by default.
     if frameCount > framesBetweenUpdate then
         frameCount = 0
-        
+
         -- Calculate the average FPS and update the performance meter.
         local avgFPS = 0
         for i = 1, framesBetweenUpdate do
             avgFPS = avgFPS + FPS[i]
         end
         avgFPS = floor(avgFPS/framesBetweenUpdate)
-        
+
         counter.text = avgFPS .. "   " ..                   -- FPS (average)
         floor(getInfo( "textureMemoryUsed" ) * C) * 0.01 .. -- Texture memory
         format( "MB   %.2fKB", cg( "count" ) )              -- Lua memory
-        
+
         -- Adjust the performance meter's width if necessary.
         local currentWidth = counter.width
         if currentWidth > maxWidth then
@@ -101,7 +100,7 @@ end
 local function toggleMeter( event )
     if event.phase == "ended" then
         cg( "collect" )
-        
+
         if isActive then
             isActive = false
             Runtime:removeEventListener( "enterFrame", updateMeter )
@@ -134,7 +133,7 @@ end
 -- Two optional parameters are: startVisible (boolean) and params (table) for visual customisation.
 function performance.start(...)
     cg( "collect" )
-    
+
     if performance.meter then
         if not isActive then
             toggleMeter({phase="ended"})
@@ -143,7 +142,7 @@ function performance.start(...)
         local t = {...}
         local startVisible = type(t[1]) ~= "boolean" or t[1]
         local customStyle = type(t[#t]) == "table" and t[#t] or {}
-        
+
         performance.meter = display.newGroup()
         performance.meter.anchorChildren = true
         if customStyle.parent then
@@ -158,26 +157,26 @@ function performance.start(...)
         performance.meter.anchorX, performance.meter.anchorY = style.anchorX, style.anchorY
         paddingHorizontal = style.paddingHorizontal*2
         framesBetweenUpdate = style.framesBetweenUpdate
-        
+
         FPS = {}
         for i = 1, framesBetweenUpdate do
             FPS[i] = 0
         end
-            
+
         counter = display.newText( performance.meter, "00   0.00MB   0.00KB", 0, style.fontOffsetY, style.font, style.fontSize )
         counter.fill = style.fontColor
         maxWidth = counter.width
-        
+
         bg = display.newRect( performance.meter, 0, 0, counter.width + paddingHorizontal, counter.height + style.paddingVertical*2 )
         bg:addEventListener( "touch", toggleMeter )
         bg.fill = style.bgColor
         bg.isHitTestable = true
-        
+
         counter:toFront()
-        
+
         counter.isVisible = startVisible
         bg.isVisible = startVisible
-        
+
         if startVisible then
             reset()
             Runtime:addEventListener( "enterFrame", updateMeter )
