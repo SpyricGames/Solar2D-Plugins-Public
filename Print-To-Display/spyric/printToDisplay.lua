@@ -31,9 +31,26 @@ local concat = table.concat
 local match = string.match
 local find = string.find
 local gsub = string.gsub
+local sub = string.sub
 local len = string.len
 local tostring = tostring
 local type = type
+
+-- Determine the project's build directory so that the developer may optionally
+-- output minimised information on where the original print function was called.
+local moduleLocation = ...
+local buildDirectory
+
+if system.getInfo( "platform" ) ~= "html5" then
+    moduleLocation = gsub( moduleLocation, "%p", "/" )
+    buildDirectory = gsub( debug.getinfo(1).source, "%\\", "/" )
+
+    local start = find( buildDirectory, moduleLocation )
+    buildDirectory = sub( buildDirectory, 1, start-2 )
+    start = find(buildDirectory, "/[^/]*$")
+    buildDirectory = sub( buildDirectory, start+1 )
+end
+moduleLocation = nil
 
 -- Localised console variables.
 local blockTouch = true
@@ -52,6 +69,7 @@ local textColorWarning
 local font
 local useHighlighting
 local activeWhenHidden
+local printSourceLevel
 
 -- Console display objects.
 local container = nil
@@ -64,7 +82,7 @@ local buttonClear = nil
 local buttonCustom = nil
 
 -- Print console controls.
-local controls 
+local controls
 local errorHandling = {}
 
 ----------------------------------------------
@@ -119,14 +137,14 @@ local function scroll( event )
         if event.phase == "moved" then
             local d = event.y - eventStart
             local toY = objectStart + d
-            
+
             if toY <= 0 and toY >= -maxY then
                 output.y = toY
             else
                 objectStart = output.y
                 eventStart = event.y
             end
-            
+
             -- Turn autoscroll on when near enough to the bottom.
             if output.y + maxY < 10 then
                 if not autoscroll then
@@ -165,13 +183,9 @@ end
 
 
 -- Output a print to the in-app console.
-local function outputToConsole( ... )
-    for i = 1, arg.n do
-        printList[i] = tostring( arg[i] )
-    end
-
+local function outputToConsole( toPrint )
     -- Break the console outputs to separate lines to prevent running out of texture memory.
-    local tempString, paragraph, finalParagraph = gsub( concat( printList, "    " ), "\t", "    " ), "", ""
+    local tempString, paragraph, finalParagraph = gsub( concat( toPrint, "    " ), "\t", "    " ), "", ""
     local singleParagraph = not find( tempString, "([^\n]*)\n(.*)" )
     repeat
         -- If there is only a single paragraph, then there will be no looping.
@@ -234,18 +248,46 @@ local function outputToConsole( ... )
 
     until tempString == nil or len( tempString ) == 0
 
-    -- Reduce, reuse and recycle.
-    for i = 1, arg.n do
-        printList[i] = nil
-    end
+
 end
 
 local function consolePrint( start )
     if start then
         -- "Hijack" the global print function and add outputToConsole to it.
         function print( ... )
-            outputToConsole( ... )
-            _print( ... )
+            for i = 1, arg.n do
+                printList[i] = tostring( arg[i] )
+            end
+
+            if printSourceLevel then
+                local info = debug.getinfo(printSourceLevel)
+                if not info then
+                    print( "WARNING: Spyric Print to Display: 'printSourceLevel' value is set too high." )
+                else
+                    local source = info.source    -- the filepath where the called function is.
+                    local name = info.name or "?" -- the name of the called function (unknown for anonymous functions).
+                    local line = info.currentline -- the line number the function was called.
+
+                    -- Clean up any possible unnecessary information from source string.
+                    local _, sourceEnd = find( source, buildDirectory )
+                    if not sourceEnd then
+                        _, sourceEnd = find( source, "corona" )
+                    end
+                    if sourceEnd then
+                        printList[arg.n+1] = "[" .. sub( source, sourceEnd+2 ) .. ":" .. name .. ":" .. line .. "]"
+                    else
+                        printList[arg.n+1] = "[" .. source .. ":" .. name .. ":" .. line .. "]"
+                    end
+                end
+            end
+
+            outputToConsole( printList )
+            _print( unpack(printList) )
+
+            -- Reduce, reuse and recycle.
+            for i = 1, arg.n+1 do
+                printList[i] = nil
+            end
         end
     else
         print = _print -- Restore the normal global print function.
@@ -304,6 +346,22 @@ function controls( event )
         end
     end
     return true
+end
+
+
+function printToDisplay.printSourceLevel( level )
+    if system.getInfo( "platform" ) == "html5" then
+        print( "WARNING: Spyric Print to Display: 'printSourceLevel' is not supported on HTML5 platform." )
+    end
+
+    -- Don't allow a stack level below 2 as they'd only point to the debug.getinfo
+    -- function or the Print to Display module's print function, making them useless.
+    level = tonumber( level )
+    if level then
+        printSourceLevel = math.max( level, 2 )
+    else
+        printSourceLevel = nil
+    end
 end
 
 -- Create the in-app console and start sending print() to the in-app console as well.
@@ -559,7 +617,7 @@ function printToDisplay.remove()
         buttonGroup = nil
         buttonScroll = nil
         buttonClear = nil
-        
+
         if errorHandling.activate then
             errorHandling.activate = false
             Runtime:removeEventListener( "unhandledError", unhandledError )
