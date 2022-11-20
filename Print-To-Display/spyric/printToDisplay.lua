@@ -355,8 +355,8 @@ function printToDisplay.printSourceLevel( level )
     if not buildDirectory then
         print(
             "WARNING: Spyric Print to Display: 'printSourceLevel' cannot be used without debug info. " ..
-            "You may be seeing this warning because you are running a release build on device and " ..
-            "you haven't explictly set 'neverStripDebugInfo' to true in build.settings."
+            "You may be seeing this warning because you are running a release build on a device and " ..
+            "you haven't explictly set 'neverStripDebugInfo = true' in build.settings."
         )
         return
     end
