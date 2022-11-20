@@ -39,12 +39,14 @@ local type = type
 -- Determine the project's build directory so that the developer may optionally
 -- output minimised information on where the original print function was called.
 local moduleLocation = ...
-local buildDirectory
+local buildDirectory = gsub( debug.getinfo(1).source, "%\\", "/" )
 
-if system.getInfo( "platform" ) ~= "html5" then
+-- If debug info has been stripped from the project, then there is no information
+-- available on the build directory, so there's no text to format.
+if buildDirectory == "=?" then
+    buildDirectory = nil
+else
     moduleLocation = gsub( moduleLocation, "%p", "/" )
-    buildDirectory = gsub( debug.getinfo(1).source, "%\\", "/" )
-
     local start = find( buildDirectory, moduleLocation )
     buildDirectory = sub( buildDirectory, 1, start-2 )
     start = find(buildDirectory, "/[^/]*$")
@@ -258,7 +260,8 @@ local function consolePrint( start )
                 printList[i] = tostring( arg[i] )
             end
 
-            if printSourceLevel then
+            -- Without debug info, there's no information on the print source, name or line.
+            if printSourceLevel and buildDirectory then
                 local info = debug.getinfo(printSourceLevel)
                 if not info then
                     print( "WARNING: Spyric Print to Display: 'printSourceLevel' value is set too high." )
@@ -349,8 +352,13 @@ end
 -- Add debug information to the end of each print() call with information on where
 -- the print call originates from, i.e. "[filename:functionName:lineNumber]".
 function printToDisplay.printSourceLevel( level )
-    if system.getInfo( "platform" ) == "html5" then
-        print( "WARNING: Spyric Print to Display: 'printSourceLevel' is not supported on HTML5 platform." )
+    if not buildDirectory then
+        print(
+            "WARNING: Spyric Print to Display: 'printSourceLevel' cannot be used without debug info. " ..
+            "You may be seeing this warning because you are running a release build on device and " ..
+            "you haven't explictly set 'neverStripDebugInfo' to true in build.settings."
+        )
+        return
     end
 
     -- If the input isn't a number, then disable printing the debug information.
