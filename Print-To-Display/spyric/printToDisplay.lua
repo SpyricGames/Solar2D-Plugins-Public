@@ -129,39 +129,41 @@ local style = {
 -- Scroll the text in the console.
 local maxY, objectStart, eventStart = 0
 local function scroll( event )
-    if event.phase == "began" then
-        display.getCurrentStage():setFocus( event.target )
-        event.target.isTouched = true
-        objectStart, eventStart = output.y, event.y
-    elseif event.target.isTouched then
-        if event.phase == "moved" then
-            local d = event.y - eventStart
-            local toY = objectStart + d
+    if canScroll then
+        if event.phase == "began" then
+            display.getCurrentStage():setFocus( event.target )
+            event.target.isTouched = true
+            objectStart, eventStart = output.y, event.y
+        elseif event.target.isTouched then
+            if event.phase == "moved" then
+                local d = event.y - eventStart
+                local toY = objectStart + d
 
-            if toY <= 0 and toY >= -maxY then
-                output.y = toY
-            else
-                objectStart = output.y
-                eventStart = event.y
-            end
+                if toY <= 0 and toY >= -maxY then
+                    output.y = toY
+                else
+                    objectStart = output.y
+                    eventStart = event.y
+                end
 
-            -- Turn autoscroll on when near enough to the bottom.
-            if output.y + maxY < 10 then
-                if not autoscroll then
-                    autoscroll = true
-                    buttonScroll.on.isVisible = true
-                    buttonScroll.off.isVisible = false
+                -- Turn autoscroll on when near enough to the bottom.
+                if output.y + maxY < 10 then
+                    if not autoscroll then
+                        autoscroll = true
+                        buttonScroll.on.isVisible = true
+                        buttonScroll.off.isVisible = false
+                    end
+                else
+                    if autoscroll then
+                        autoscroll = false
+                        buttonScroll.on.isVisible = false
+                        buttonScroll.off.isVisible = true
+                    end
                 end
             else
-                if autoscroll then
-                    autoscroll = false
-                    buttonScroll.on.isVisible = false
-                    buttonScroll.off.isVisible = true
-                end
+                display.getCurrentStage():setFocus( nil )
+                event.target.isTouched = false
             end
-        else
-            display.getCurrentStage():setFocus( nil )
-            event.target.isTouched = false
         end
     end
     return blockTouch
@@ -233,8 +235,7 @@ local function outputToConsole( toPrint )
             end
 
             local newY = log.y + log.height
-            if not canScroll and newY >= scrollThreshold then
-                background:addEventListener( "touch", scroll )
+            if newY >= scrollThreshold then
                 canScroll = true
             end
 
@@ -247,8 +248,6 @@ local function outputToConsole( toPrint )
         end
 
     until tempString == nil or len( tempString ) == 0
-
-
 end
 
 local function consolePrint( start )
@@ -327,7 +326,6 @@ function controls( event )
 
         -- Clear all text.
         elseif event.target.id == "clear" then
-            background:removeEventListener( "touch", scroll )
             buttonScroll.on.isVisible = true
             buttonScroll.off.isVisible = false
             canScroll = false
@@ -335,12 +333,12 @@ function controls( event )
 
             display.remove( output )
             output = display.newGroup()
-            container:insert( output, true )
-            currentY = style.paddingTop-style.height*0.5
+            container:insert( output )
+            currentY = style.paddingTop
             output.y = 0
 
         -- Handle custom button event.
-        else
+        elseif event.target.listener then
             event.target.listener()
 
         end
@@ -348,16 +346,18 @@ function controls( event )
     return true
 end
 
-
+-- Add debug information to the end of each print() call with information on where
+-- the print call originates from, i.e. "[filename:functionName:lineNumber]".
 function printToDisplay.printSourceLevel( level )
     if system.getInfo( "platform" ) == "html5" then
         print( "WARNING: Spyric Print to Display: 'printSourceLevel' is not supported on HTML5 platform." )
     end
 
-    -- Don't allow a stack level below 2 as they'd only point to the debug.getinfo
-    -- function or the Print to Display module's print function, making them useless.
+    -- If the input isn't a number, then disable printing the debug information.
     level = tonumber( level )
     if level then
+        -- Don't allow a stack level below 2 as they'd only point to the debug.getinfo
+        -- function or the Print to Display module's print function, making them useless.
         printSourceLevel = math.max( level, 2 )
     else
         printSourceLevel = nil
@@ -402,11 +402,11 @@ function printToDisplay.start(...)
         local paddingRight = style.paddingRight
 
         -- Assign initial console properties (localised for speed).
-        scrollThreshold = (height-(paddingTop+paddingBottom))*0.5
-        currentY = paddingTop-height*0.5
+        scrollThreshold = height-(paddingTop+paddingBottom)
+        currentY = paddingTop
         textWidth = width - (paddingLeft + paddingRight)
         paddingRow = style.paddingRow
-        textX = paddingLeft-width*0.5
+        textX = paddingLeft
         textColor = style.textColor
         textColorError = style.textColorError
         textColorWarning = style.textColorWarning
@@ -421,16 +421,19 @@ function printToDisplay.start(...)
         -- Create the console's container.
         container = display.newContainer( width, height )
         container.anchorX, container.anchorY = anchorX, anchorY
+        container.anchorChildren = false
         container.x, container.y = x, y
         container.alpha = alpha
 
         -- Create the console's background.
         background = display.newRect( container, 0, 0, width, height )
+        background.anchorX, background.anchorY = anchorX, anchorY
         background.fill = style.bgColor
+        background:addEventListener( "touch", scroll )
 
         -- Create the console output group.
         output = display.newGroup()
-        container:insert( output, true )
+        container:insert( output )
 
         -- Calculate dynamic sizes for the icons.
         local SEG = buttonSize*0.2 -- Segment.
@@ -624,6 +627,65 @@ function printToDisplay.remove()
         end
 
         consolePrint()
+    end
+end
+
+function printToDisplay.resize( params )
+    params = params or {}
+
+    -- Readjust the console and button positions.
+    if params.x or params.y then
+        local x = params.x or container.x
+        local y = params.y or container.y
+        local dx, dy = x - container.x, y - container.y
+        style.x, style.y = x, y
+
+        container.x, container.y = x, y
+        buttonToggle.x = buttonToggle.x + dx
+        buttonToggle.y = buttonToggle.y + dy
+        buttonGroup.x = buttonGroup.x + dx
+        buttonGroup.y = buttonGroup.y + dy
+
+        -- Update toggle button's open/close locations.
+        if style.buttonPos == "left" then
+            buttonToggle.xFrom = x-style.anchorX*style.width-style.buttonSize*0.5
+            buttonToggle.xTo = buttonToggle.xFrom + container.width
+        else
+            buttonToggle.xFrom = x+(1-style.anchorX)*style.width+style.buttonSize*0.5
+            buttonToggle.xTo = buttonToggle.xFrom - container.width
+        end
+    end
+
+    -- Update the console's height and update scroll properties.
+    if params.height then
+        local height = params.height
+        style.height = height
+
+        container.height = height
+        background.height = height
+
+        -- Determine if the console should be scrollable after its size change.
+        scrollThreshold = height-(style.paddingTop+style.paddingBottom)
+
+        local newY = currentY - paddingRow
+        if not canScroll and newY >= scrollThreshold then
+            canScroll = true
+        elseif canScroll and newY < scrollThreshold then
+            -- The console is tall enough to fit in the entire output.
+            canScroll = false
+        end
+
+        if canScroll then
+            -- Update the max scroll distance.
+            maxY = newY - scrollThreshold
+            if autoscroll then
+                -- Snap to end.
+                output.y = -maxY
+            end
+        else
+            -- Snap to start.
+            output.y = 0
+        end
     end
 end
 
