@@ -220,8 +220,10 @@ end
 -- Output a print to the in-app console.
 local function outputToConsole( toPrint )
 	-- Break the console outputs to separate lines to prevent running out of texture memory.
-	local tempString, paragraph, finalParagraph = gsub( concat( toPrint, "    " ), "\t", "    " ), "", ""
+	local tempString = gsub( concat( toPrint, "    " ), "\t", "    " )
+	local paragraph, finalParagraph = "", ""
 	local singleParagraph = not find( tempString, "([^\n]*)\n(.*)" )
+
 	repeat
 		-- If there is only a single paragraph, then there will be no looping.
 		if singleParagraph then
