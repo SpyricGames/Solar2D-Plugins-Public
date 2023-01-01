@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2022 Spyric Games Ltd.         Last Updated: 6 November 2022  --
+--  © 2020-2023 Spyric Games Ltd.          Last Updated: 1 January 2023  --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -53,6 +53,9 @@ else
 	buildDirectory = sub( buildDirectory, start+1 )
 end
 moduleLocation = nil
+
+local platform = system.getInfo( "platform" )
+local mouseSupport = system.getInfo( "environment" ) == "simulator" or (platform == "win32" or platform == "macos" or platform == "linux")
 
 -- Localised console variables.
 local blockTouch = true
@@ -115,6 +118,9 @@ local style = {
 	paddingTop = 10,
 	paddingBottom = 10,
 	-- Console (functional):
+	scrollSpeed = 120,
+	enableMouseScroll = true,
+	hideControls = false,
 	useHighlighting = true,
 	activeWhenHidden = true,
 	blockTouch = true,
@@ -141,9 +147,15 @@ local function scroll( event )
 				local d = event.y - eventStart
 				local toY = objectStart + d
 
+				-- Cap the scrollable area.
 				if toY <= 0 and toY >= -maxY then
 					output.y = toY
 				else
+					if toY < -maxY then
+						output.y = -maxY
+					else
+						output.y = 0
+					end
 					objectStart = output.y
 					eventStart = event.y
 				end
@@ -169,6 +181,25 @@ local function scroll( event )
 		end
 	end
 	return blockTouch
+end
+
+local function mouseScroll( event )
+	if event.scrollY ~= 0 then
+		local x, y = event.x, event.y
+
+		if x >= container.x and x <= container.x + container.width and y >= container.y and y <= container.y + container.height then
+			-- Fake a series of touch events to scroll.
+			local fakeEvent = { phase="began", y=0, target=background }
+			scroll( fakeEvent )
+
+			fakeEvent.phase = "moved"
+			fakeEvent.y = event.scrollY < 0 and style.scrollSpeed or -style.scrollSpeed
+			scroll( fakeEvent )
+
+			fakeEvent.phase = "ended"
+			scroll( fakeEvent )
+		end
+	end
 end
 
 
@@ -597,6 +628,11 @@ function printToDisplay.start(...)
 			parent:insert( buttonToggle )
 		end
 
+		if style.hideControls then
+			buttonToggle.isVisible = false
+			buttonGroup.isVisible = false
+		end
+
 		consolePrint(true)
 		if not startVisible then
 			controls( {phase="began",target={id="toggle"}} )
@@ -610,6 +646,17 @@ function printToDisplay.start(...)
 
 			Runtime:addEventListener( "unhandledError", unhandledError )
 		end
+
+		if mouseSupport and style.enableMouseScroll then
+			Runtime:addEventListener( "mouse", mouseScroll )
+		end
+	end
+end
+
+-- A convenience function to programmatically clear the console.
+function printToDisplay.clear()
+	if container then
+		controls( {phase="began",target={id="clear"}} )
 	end
 end
 
@@ -632,6 +679,10 @@ function printToDisplay.remove()
 		if errorHandling.activate then
 			errorHandling.activate = false
 			Runtime:removeEventListener( "unhandledError", unhandledError )
+		end
+
+		if mouseSupport and style.enableMouseScroll then
+			Runtime:removeEventListener( "mouse", mouseScroll )
 		end
 
 		consolePrint()
