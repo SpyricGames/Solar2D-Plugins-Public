@@ -6,7 +6,7 @@
 --  /____/ .___/\__, /_/  /_/\___/   \____/\__,_/_/ /_/ /_/\___/____/    --
 --      /_/    /____/                                                    --
 --                                                                       --
---  © 2020-2021 Spyric Games Ltd.             Last Updated: 24 June 2021 --
+--  © 2020-2023 Spyric Games Ltd.              Last Updated: 3 June 2023 --
 ---------------------------------------------------------------------------
 --  License: MIT                                                         --
 ---------------------------------------------------------------------------
@@ -16,29 +16,13 @@
 
 ---------------------------------------------------------------------------
 
--- NB! On Android, the "immersiveSticky" mode is problematic. Even though
--- all Android devices from 4.4 onwards support it, this doesn't mean that
--- all devices actually use it. Many Android devices still use the physical
--- navbar and you can't (at least currently) determine whether a device has
--- a physical or a software navbar by just using the Solar2D API.
-
--- While there are ways of finding out if the screen size has changed, none
--- of them are particularly graceful. However, toggling the "immersiveSticky"
--- mode should be completed within a fraction of a second in most cases. This
--- means that if your app has a splash or a launch screen that is shown when
--- your app launches, like your game or company's logo, then this will allow
--- the plugin (and the Solar2D API) more than enough time to update.
-
--- If you just require this plugin and, without waiting, begin to create
--- display objects, then they will likely not be positioned correctly if
--- you are positioning them based on the screen dimensions.
-
--- These issues do not exist on any other platform.
-
----------------------------------------------------------------------------
-
 local screen = {}
 screen.safe = {}
+
+local androidAPI
+if system.getInfo("platform") == "android" then
+    androidAPI = system.getInfo( "androidApiLevel" )
+end
 
 -- Add/update screen table's properties.
 local function update()
@@ -51,7 +35,7 @@ local function update()
 	screen.centerX = display.contentCenterX
 	screen.centerY = display.contentCenterY
 	screen.diagonal = math.sqrt( display.actualContentWidth^2+ display.actualContentHeight^2)
-	
+
 	screen.safe.minX = display.safeScreenOriginX
 	screen.safe.maxX = display.safeScreenOriginX + display.safeActualContentWidth
 	screen.safe.minY = display.safeScreenOriginY
@@ -60,13 +44,12 @@ local function update()
 	screen.safe.height = display.safeActualContentHeight
 	screen.safe.centerX = (screen.safe.minX + screen.safe.maxX)*0.5
 	screen.safe.centerY = (screen.safe.minY + screen.safe.maxY)*0.5
-	
+
 	if screen.callback then
 		screen.callback()
-		screen.callbackCalled = true
 	end
 end
--- Create the initial screen properties.
+-- Obtain the initial screen properties.
 update()
 
 -- Manually update screen properties.
@@ -81,17 +64,40 @@ function screen.setCallback( f )
 	end
 end
 
+function screen.removeCallback()
+	screen.callback = nil
+end
+
+-- On Android devices with software keys, hiding them using the immersiveSticky mode may take a couple of frames
+-- until Solar2D update's its screen. If you are using this module to handle screen resize events, then you may
+-- wish to wait until the screen has finished updating in certain cases before you start creating your app's UI.
+function screen.waitUntilReady( callback, maxWaitTime )
+	-- Android 4.4 KitKat (API 19): first version to support immersive navbar.
+	if androidAPI and androidAPI >= 19 and system.getInfo( "hasSoftwareKeys" ) then
+		local startWidth = screen.width
+
+		-- Ensure a maximum of 50 iterations at 10ms. The screen should update within a few frames. If it hasn't
+		-- updated in 500ms, then the function has been called after the screen has already been resized.
+		local iterations = math.min( maxWaitTime and math.max(math.floor(math.abs(maxWaitTime)/10), 1) or 50, 50 )
+		timer.performWithDelay( 10, function( event )
+			if screen.width ~= startWidth or event.count == 50 then
+				timer.cancel( event.source )
+				callback()
+			end
+		end, iterations )
+	else
+		-- On all other devices/platforms, the callback is triggered instantly.
+		callback()
+	end
+end
+
 ---------------------------------------------------------------------------
 
 -- Automatically hide the Android navbar & iOS status bar on system events.
-local androidAPI
-if system.getInfo("platform") == "android" then
-    androidAPI = system.getInfo( "androidApiLevel" )
-end
-
 local function toggleSystemUI()
     display.setStatusBar( display.HiddenStatusBar )
 	update()
+
     if androidAPI then
         -- Android 4.4 KitKat (API 19): first version to support immersive navbar.
         if androidAPI >= 19 then
